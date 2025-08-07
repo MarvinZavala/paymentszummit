@@ -12,7 +12,6 @@ export default function Header() {
     { name: 'Payment Solutions', href: '/products' },
     { name: 'Equipment', href: '/portfolio' },
     { name: 'Company', href: '/company' },
-    { name: 'Resources', href: '/resources' },
     { name: 'Contact', href: '/contact' }
   ];
 

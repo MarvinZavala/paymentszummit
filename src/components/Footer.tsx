@@ -26,15 +26,6 @@ export default function Footer() {
       ]
     },
     {
-      title: 'Resources',
-      links: [
-        { name: 'Help Center', href: '/resources/help' },
-        { name: 'API Documentation', href: '/resources/api' },
-        { name: 'Security', href: '/resources/security' },
-        { name: 'Compliance', href: '/resources/compliance' }
-      ]
-    },
-    {
       title: 'Support',
       links: [
         { name: 'Contact Us', href: '/contact' },
@@ -136,7 +127,7 @@ export default function Footer() {
             
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-breathe"></div>
                 <span className="text-neutral-400 text-sm">All systems operational</span>
               </div>
               <div className="flex items-center space-x-2">

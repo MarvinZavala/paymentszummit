@@ -321,8 +321,8 @@ export default function FloatingLeadCapture({}: FloatingLeadCaptureProps) {
           
           {/* Animated Background Elements */}
           <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute top-0 left-0 w-32 h-32 bg-yellow-400/10 rounded-full blur-xl animate-pulse"></div>
-            <div className="absolute bottom-0 right-0 w-40 h-40 bg-orange-500/10 rounded-full blur-xl animate-pulse animation-delay-1000"></div>
+            <div className="absolute top-0 left-0 w-32 h-32 bg-yellow-400/10 rounded-full blur-xl animate-breathe"></div>
+            <div className="absolute bottom-0 right-0 w-40 h-40 bg-orange-500/10 rounded-full blur-xl animate-breathe animation-delay-1000"></div>
           </div>
 
           {/* Close Button */}
@@ -352,7 +352,7 @@ export default function FloatingLeadCapture({}: FloatingLeadCaptureProps) {
                     <strong>Save up to 40%</strong> on payment processing fees
                   </p>
                   <div className="inline-flex items-center space-x-2 bg-red-500/20 border border-red-400/50 rounded-full px-3 py-1">
-                    <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-red-400 rounded-full animate-breathe"></div>
                     <span className="text-red-200 text-xs font-semibold">LIMITED TIME OFFER</span>
                   </div>
                 </div>

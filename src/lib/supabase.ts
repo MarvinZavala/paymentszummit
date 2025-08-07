@@ -16,3 +16,18 @@ export type Lead = {
   phone: string
   email: string
 }
+
+export type ContactMessage = {
+  id?: string
+  created_at?: string
+  first_name: string
+  last_name: string
+  email: string
+  phone: string
+  company?: string
+  website?: string
+  contact_reason: string
+  monthly_volume?: string
+  current_processor?: string
+  message?: string
+}

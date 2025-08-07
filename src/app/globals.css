@@ -228,3 +228,27 @@ h1, h2, h3, h4, h5, h6 {
 .animate-slide-up-delay {
   animation: slideUp 0.8s ease-out 0.3s both;
 }
+
+/* Optimized breathing animation - lighter than pulse */
+@keyframes breathe {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.02);
+  }
+}
+
+.animate-breathe {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+.animate-breathe-delay {
+  animation: breathe 4s ease-in-out infinite 2s;
+}
+
+.animate-breathe-delay-long {
+  animation: breathe 4s ease-in-out infinite 4s;
+}

@@ -64,14 +64,14 @@ export default function Company() {
       <section className="relative py-20 pt-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-dark via-primary-blue to-luxury-purple opacity-90"></div>
         <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-          <div className="absolute top-40 right-10 w-72 h-72 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-2000"></div>
+          <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full mix-blend-multiply filter blur-xl animate-breathe"></div>
+          <div className="absolute top-40 right-10 w-72 h-72 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-xl animate-breathe-delay"></div>
         </div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-            About
-            <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 animate-fade-in">
+            <span className="inline-block animate-slide-up">About</span>
+            <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent animate-slide-up-delay">
               Zummit Payments
             </span>
           </h1>
@@ -122,7 +122,7 @@ export default function Company() {
                     </svg>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-white">Save Up to 40%</h4>
+                    <h4 className="font-semibold text-white">Low or High Risk</h4>
                     <p className="text-neutral-400 text-sm">Competitive rates with no hidden fees</p>
                   </div>
                 </div>
