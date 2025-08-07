@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import Header from '@/components/Header';
+import FloatingLeadCapture from '@/components/FloatingLeadCapture';
 
 export default function Resources() {
   const [activeCategory, setActiveCategory] = useState('all');
@@ -110,7 +112,7 @@ export default function Resources() {
   const tools = [
     {
       name: 'Fee Calculator',
-      description: 'Calculate your potential savings with ZummitPayments',
+      description: 'Calculate your potential savings with Zummit Payments',
       icon: (
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
           <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
@@ -121,7 +123,7 @@ export default function Resources() {
     },
     {
       name: 'ROI Calculator',
-      description: 'See how much you can save by switching to ZummitPayments',
+      description: 'See how much you can save by switching to Zummit Payments',
       icon: (
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
           <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
@@ -159,8 +161,10 @@ export default function Resources() {
 
   return (
     <div className="min-h-screen">
+      <Header />
+      <FloatingLeadCapture pageName="resources" />
       
-      <section className="relative py-20 overflow-hidden">
+      <section className="relative py-20 pt-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-dark via-primary-blue to-luxury-purple opacity-90"></div>
         <div className="absolute inset-0">
           <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
@@ -209,7 +213,7 @@ export default function Resources() {
                 </span>
               </h2>
               <p className="text-xl text-neutral-400 max-w-3xl mx-auto">
-                Start with these essential resources to get the most out of ZummitPayments.
+                Start with these essential resources to get the most out of Zummit Payments.
               </p>
             </div>
 

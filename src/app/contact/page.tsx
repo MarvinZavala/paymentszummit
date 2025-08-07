@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import Header from '@/components/Header';
+import FloatingLeadCapture from '@/components/FloatingLeadCapture';
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -69,8 +72,8 @@ export default function Contact() {
     {
       title: 'Email Us',
       description: 'Send us a detailed message',
-      value: 'sales@paymentssummit.com',
-      link: 'mailto:sales@paymentssummit.com',
+      value: 'Save.zummitpayments@gmail.com',
+      link: 'mailto:Save.zummitpayments@gmail.com',
       icon: (
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
           <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
@@ -107,7 +110,7 @@ export default function Contact() {
             </div>
             <h1 className="text-4xl font-bold text-white mb-4">Thank You!</h1>
             <p className="text-xl text-neutral-300 mb-8">
-              We've received your message and will get back to you within 2 hours.
+              We&apos;ve received your message and will get back to you within 2 hours.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
@@ -130,12 +133,12 @@ export default function Contact() {
               >
                 Send Another Message
               </button>
-              <a
+              <Link
                 href="/"
                 className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black px-6 py-3 rounded-full font-bold transition-all duration-300"
               >
                 Back to Home
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -145,8 +148,10 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen">
+      <Header />
+      <FloatingLeadCapture pageName="contact" />
       
-      <section className="relative py-20 overflow-hidden">
+      <section className="relative py-20 pt-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-dark via-primary-blue to-luxury-purple opacity-90"></div>
         <div className="absolute inset-0">
           <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>

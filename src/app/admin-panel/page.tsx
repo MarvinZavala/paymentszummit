@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { CalendlyEmbed } from '@/components/CalendlyWidget';
+import { CalendlyEmbed, CalendlyButton } from '@/components/CalendlyWidget';
 
 export default function Dashboard() {
   const [stats] = useState({
@@ -100,7 +100,7 @@ export default function Dashboard() {
           </div>
           
           <p className="text-xl md:text-2xl text-neutral-200 mb-12 max-w-4xl mx-auto leading-relaxed">
-            Experience the power of our premium payment solutions and start saving up to 40% on processing fees today.
+           Experience the power of our premium merchant & payment processing services and start saving from 0% on processing fees today.
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
@@ -157,7 +157,7 @@ export default function Dashboard() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
+            {features.map((feature) => (
               <Link
                 key={feature.title}
                 href={feature.link}
@@ -194,12 +194,10 @@ export default function Dashboard() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <Link
-              href="/contact"
+            <CalendlyButton 
+              text="Get Your Free Quote"
               className="bg-black hover:bg-neutral-800 text-white px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all duration-300 hover:scale-105"
-            >
-              Get Your Free Quote
-            </Link>
+            />
             <Link
               href="/portfolio"
               className="bg-white/20 hover:bg-white/30 text-black border-2 border-black/20 px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 hover:scale-105"

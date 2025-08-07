@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import Image from 'next/image';
+import Header from '@/components/Header';
+import FloatingLeadCapture from '@/components/FloatingLeadCapture';
 
 export default function Portfolio() {
   const [activeCategory, setActiveCategory] = useState('all');
@@ -11,26 +13,27 @@ export default function Portfolio() {
     { id: 'all', name: 'All Equipment' },
     { id: 'pos', name: 'POS Systems' },
     { id: 'mobile', name: 'Mobile Solutions' },
-    { id: 'printers', name: 'Printers & Accessories' }
+    { id: 'printers', name: 'Printers & Accessories' },
+    { id: 'gateway', name: 'Payment Gateway' }
   ];
 
   const equipment = [
     {
-      id: 1,
-      category: 'pos',
-      name: 'Clover Station',
-      description: 'Complete POS solution with built-in payment processing, inventory management, and customer engagement tools.',
-      image: '/multiplemerchant.PNG',
+      id: 7,
+      category: 'mobile',
+      name: 'Clover Go',
+      description: 'Ultra-portable card reader that turns your smartphone or tablet into a complete POS system.',
+      image: '/merchantclover2.PNG',
       features: [
-        '14" HD touchscreen display',
-        'Built-in receipt printer',
-        'Cash drawer included',
-        'Customer-facing display',
-        'Advanced inventory management',
-        'Employee management',
-        'Real-time reporting'
+        'Smartphone/tablet compatible',
+        'Chip and contactless payments',
+        'Bluetooth connectivity',
+        'Long battery life',
+        'Compact design',
+        'Quick setup',
+        'Mobile app integration'
       ],
-      businessTypes: ['Restaurants', 'Retail Stores', 'Service Businesses'],
+      businessTypes: ['Small Business', 'Mobile Vendors', 'Service Providers'],
       popular: true
     },
     {
@@ -52,21 +55,75 @@ export default function Portfolio() {
       popular: true
     },
     {
-      id: 3,
+      id: 8,
       category: 'pos',
-      name: 'Clover Mini',
-      description: 'Compact countertop POS perfect for small businesses that need powerful features in a small footprint.',
-      image: '/multiplemerchant.PNG',
+      name: 'Complete POS Setup',
+      description: 'Full merchant services setup with integrated payment processing and business management tools.',
+      image: '/posmeerchant.JPG',
       features: [
-        'Compact 7" touchscreen',
-        'Built-in payment processing',
-        'Customer-facing display',
-        'Receipt printer compatible',
-        'Inventory management',
-        'Employee tracking',
-        'App marketplace access'
+        'Complete hardware bundle',
+        'Integrated payment processing',
+        'Business management suite',
+        'Training and support included',
+        'Custom configuration',
+        'Multi-payment options',
+        '24/7 technical support'
       ],
-      businessTypes: ['Cafes', 'Small Retail', 'Service Counters'],
+      businessTypes: ['New Businesses', 'Upgrading Merchants', 'Multi-location'],
+      popular: false
+    },
+    {
+      id: 9,
+      category: 'gateway',
+      name: 'Payment Gateway',
+      description: 'Secure online payment processing gateway for e-commerce and remote invoicing. Send professional invoices and collect payments remotely. Now supporting cryptocurrency transactions.',
+      image: '/gateway.JPG',
+      features: [
+        'Online invoice generation',
+        'Email payment links',
+        'Mobile-friendly payment pages',
+        'Real-time payment notifications',
+        'Recurring billing options',
+        'Multi-currency support',
+        'Advanced reporting dashboard'
+      ],
+      businessTypes: ['E-commerce', 'Service Providers', 'Consultants'],
+      popular: true
+    },
+    {
+      id: 10,
+      category: 'pos',
+      name: 'Enterprise POS System',
+      description: 'High-volume merchant solution with advanced analytics and multi-location management capabilities.',
+      image: '/merchantbig.JPG',
+      features: [
+        'Enterprise-grade hardware',
+        'Advanced analytics dashboard',
+        'Multi-location management',
+        'Custom reporting tools',
+        'Scalable architecture',
+        'Priority support',
+        'Advanced inventory management'
+      ],
+      businessTypes: ['Large Retailers', 'Chain Stores', 'Enterprise'],
+      popular: false
+    },
+    {
+      id: 11,
+      category: 'pos',
+      name: 'Premium Merchant Setup',
+      description: 'Complete premium merchant services with high-performance POS systems for growing businesses.',
+      image: '/merchantbig.PNG',
+      features: [
+        'Premium hardware package',
+        'Advanced payment processing',
+        'Customer loyalty programs',
+        'Integrated accounting',
+        'Staff management tools',
+        'Real-time reporting',
+        'Cloud-based system'
+      ],
+      businessTypes: ['Growing Businesses', 'Retail Chains', 'Franchises'],
       popular: false
     },
     {
@@ -85,93 +142,21 @@ export default function Portfolio() {
       ],
       businessTypes: ['Restaurants', 'Food Service', 'Quick Service'],
       popular: false
-    },
-    {
-      id: 5,
-      category: 'pos',
-      name: 'Clover Station Pro',
-      description: 'Advanced POS system with enhanced processing power and premium features for high-volume businesses.',
-      image: '/merchantbig.JPG',
-      features: [
-        'Large 15.6" touchscreen',
-        'Enhanced processing power',
-        'Multi-location management',
-        'Advanced analytics',
-        'Custom app integration',
-        'Premium customer display',
-        'Enterprise-grade security'
-      ],
-      businessTypes: ['Large Restaurants', 'Retail Chains', 'Enterprise'],
-      popular: false
-    },
-    {
-      id: 6,
-      category: 'pos',
-      name: 'Clover Duo',
-      description: 'Dual-screen POS solution combining merchant and customer-facing displays for seamless transactions.',
-      image: '/merchantbig.PNG',
-      features: [
-        'Dual-screen design',
-        'Customer-facing payments',
-        'Tip and signature capture',
-        'Loyalty program integration',
-        'Real-time inventory sync',
-        'Employee time tracking',
-        'Cloud-based reporting'
-      ],
-      businessTypes: ['Restaurants', 'Coffee Shops', 'Retail'],
-      popular: true
-    },
-    {
-      id: 7,
-      category: 'mobile',
-      name: 'Clover Go',
-      description: 'Ultra-portable card reader that turns your smartphone or tablet into a complete POS system.',
-      image: '/merchantclover2.PNG',
-      features: [
-        'Smartphone/tablet compatible',
-        'Chip and contactless payments',
-        'Bluetooth connectivity',
-        'Long battery life',
-        'Compact design',
-        'Quick setup',
-        'Mobile app integration'
-      ],
-      businessTypes: ['Small Business', 'Mobile Vendors', 'Service Providers'],
-      popular: false
-    },
-    {
-      id: 8,
-      category: 'pos',
-      name: 'Complete POS Setup',
-      description: 'Full merchant services setup with integrated payment processing and business management tools.',
-      image: '/posmeerchant.JPG',
-      features: [
-        'Complete hardware bundle',
-        'Integrated payment processing',
-        'Business management suite',
-        'Training and support included',
-        'Custom configuration',
-        'Multi-payment options',
-        '24/7 technical support'
-      ],
-      businessTypes: ['New Businesses', 'Upgrading Merchants', 'Multi-location'],
-      popular: true
     }
   ];
 
   const installations = [
     {
-      businessName: 'Local Restaurant',
-      location: 'Downtown Miami',
+      businessName: 'Turos Tacos',
+      location: 'Oakland',
       equipment: 'Clover Station + Kitchen Printers',
       image: '/merchant.JPG',
       results: {
-        efficiency: '+35%',
+        efficiency: '+100%',
         processing: '$50K+/month',
         satisfaction: '5/5 stars'
       },
-      testimonial: 'ZummitPayments transformed our restaurant operations. The system is intuitive and our staff loves it.'
+      testimonial: 'Zummit Payments transformed our restaurant operations. The system is intuitive and our staff loves it.'
     }
   ];
 
@@ -181,8 +166,10 @@ export default function Portfolio() {
 
   return (
     <div className="min-h-screen">
+      <Header />
+      <FloatingLeadCapture pageName="portfolio" />
       
-      <section className="relative py-20 overflow-hidden">
+      <section className="relative py-20 pt-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-dark via-primary-blue to-luxury-purple opacity-90"></div>
         <div className="absolute inset-0">
           <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
@@ -190,9 +177,9 @@ export default function Portfolio() {
         </div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-            Our Merchant
-            <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 animate-fade-in">
+            <span className="inline-block animate-slide-up">Our Merchant</span>
+            <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent animate-slide-up-delay">
               Equipment
             </span>
           </h1>
@@ -315,7 +302,7 @@ export default function Portfolio() {
               </span>
             </h2>
             <p className="text-xl text-neutral-400 max-w-3xl mx-auto">
-              See how we've helped local businesses transform their operations with our professional installations.
+              See how we&apos;ve helped local businesses transform their operations with our professional installations.
             </p>
           </div>
 
@@ -338,14 +325,10 @@ export default function Portfolio() {
                   <p className="text-yellow-400 font-semibold mb-4">{installation.location}</p>
                   <p className="text-neutral-300 mb-6">Equipment: {installation.equipment}</p>
                   
-                  <div className="grid grid-cols-3 gap-6 mb-8">
+                  <div className="grid grid-cols-2 gap-6 mb-8">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-yellow-400 mb-2">{installation.results.efficiency}</div>
                       <div className="text-neutral-400 text-sm">Efficiency Boost</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-yellow-400 mb-2">{installation.results.processing}</div>
-                      <div className="text-neutral-400 text-sm">Monthly Processing</div>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-yellow-400 mb-2">{installation.results.satisfaction}</div>
@@ -354,7 +337,7 @@ export default function Portfolio() {
                   </div>
                   
                   <blockquote className="text-neutral-300 italic text-lg leading-relaxed border-l-4 border-yellow-400 pl-6">
-                    "{installation.testimonial}"
+                    &ldquo;{installation.testimonial}&rdquo;
                   </blockquote>
                 </div>
               </div>

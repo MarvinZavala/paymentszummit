@@ -1,38 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import Header from '@/components/Header';
+import FloatingLeadCapture from '@/components/FloatingLeadCapture';
 
 export default function Company() {
-  const leadership = [
-    {
-      name: 'Michael Rodriguez',
-      position: 'Chief Executive Officer',
-      bio: 'With over 15 years in fintech, Michael has led ZummitPayments to become the #1 rated payment processor.',
-      image: '/api/placeholder/400/400',
-      linkedin: '#'
-    },
-    {
-      name: 'Sarah Chen',
-      position: 'Chief Technology Officer',
-      bio: 'Former Silicon Valley engineer with expertise in secure payment systems and blockchain technology.',
-      image: '/api/placeholder/400/400',
-      linkedin: '#'
-    },
-    {
-      name: 'David Thompson',
-      position: 'Chief Financial Officer',
-      bio: 'Wall Street veteran with deep experience in financial services and regulatory compliance.',
-      image: '/api/placeholder/400/400',
-      linkedin: '#'
-    },
-    {
-      name: 'Lisa Wang',
-      position: 'VP of Customer Success',
-      bio: 'Dedicated to ensuring our clients achieve maximum value from our payment processing solutions.',
-      image: '/api/placeholder/400/400',
-      linkedin: '#'
-    }
-  ];
+
 
   const values = [
     {
@@ -76,53 +49,19 @@ export default function Company() {
 
   const stats = [
     { number: '10,000+', label: 'Happy Customers' },
-    { number: '$2.5B+', label: 'Processed Annually' },
+    { number: '$300K+', label: 'Processed Annually' },
     { number: '99.9%', label: 'System Uptime' },
     { number: '40%', label: 'Average Savings' }
   ];
 
-  const timeline = [
-    {
-      year: '2018',
-      title: 'Company Founded',
-      description: 'ZummitPayments was established with a mission to simplify payment processing for businesses of all sizes.'
-    },
-    {
-      year: '2019',
-      title: 'First 1,000 Customers',
-      description: 'Reached our first major milestone by serving over 1,000 businesses across the United States.'
-    },
-    {
-      year: '2020',
-      title: 'Technology Innovation',
-      description: 'Launched our proprietary fraud detection system, reducing chargebacks by 75%.'
-    },
-    {
-      year: '2021',
-      title: 'Series A Funding',
-      description: 'Secured $25M in Series A funding to expand our technology platform and customer support.'
-    },
-    {
-      year: '2022',
-      title: 'Industry Recognition',
-      description: 'Named "Payment Processor of the Year" by FinTech Awards for our innovative solutions.'
-    },
-    {
-      year: '2023',
-      title: 'Global Expansion',
-      description: 'Expanded internationally and launched support for 40+ payment methods worldwide.'
-    },
-    {
-      year: '2024',
-      title: '#1 Ranked Processor',
-      description: 'Achieved the #1 ranking in customer satisfaction and became the fastest-growing payment processor.'
-    }
-  ];
+
 
   return (
     <div className="min-h-screen">
+      <Header />
+      <FloatingLeadCapture pageName="company" />
       
-      <section className="relative py-20 overflow-hidden">
+      <section className="relative py-20 pt-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-dark via-primary-blue to-luxury-purple opacity-90"></div>
         <div className="absolute inset-0">
           <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
@@ -133,12 +72,12 @@ export default function Company() {
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
             About
             <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-              ZummitPayments
+              Zummit Payments
             </span>
           </h1>
           
           <p className="text-xl md:text-2xl text-neutral-200 mb-12 max-w-4xl mx-auto">
-            We're revolutionizing payment processing with transparent pricing, 
+            We&apos;re revolutionizing payment processing with transparent pricing, 
             cutting-edge technology, and unmatched customer service.
           </p>
 
@@ -161,12 +100,12 @@ export default function Company() {
                 Our Mission
               </h2>
               <p className="text-xl text-neutral-300 mb-8 leading-relaxed">
-                At ZummitPayments, we believe that every business deserves access to premium payment processing 
+                At Zummit Payments, we believe that every business deserves access to premium payment processing 
                 solutions without the premium price tag. Our mission is to democratize financial technology 
                 and help businesses of all sizes thrive in the digital economy.
               </p>
               <p className="text-lg text-neutral-400 leading-relaxed">
-                We've built our platform from the ground up with transparency, security, and customer success 
+                We&apos;ve built our platform from the ground up with transparency, security, and customer success 
                 at the core. Our team of payment experts works around the clock to ensure your business has 
                 the tools it needs to grow and succeed.
               </p>
@@ -250,75 +189,159 @@ export default function Company() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Our Journey
-            </h2>
-            <p className="text-xl text-neutral-400 max-w-3xl mx-auto">
-              From startup to industry leader - here's how we've grown to become the #1 rated payment processor.
-            </p>
-          </div>
-
-          <div className="relative">
-            <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-full bg-gradient-to-b from-yellow-400 to-orange-500 rounded-full"></div>
-            
-            <div className="space-y-12">
-              {timeline.map((item, index) => (
-                <div key={index} className={`flex items-center ${index % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
-                  <div className={`w-full lg:w-5/12 ${index % 2 === 0 ? 'lg:pr-12' : 'lg:pl-12'}`}>
-                    <div className="glass rounded-2xl p-8 relative">
-                      <div className={`absolute top-1/2 transform -translate-y-1/2 w-4 h-4 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full ${
-                        index % 2 === 0 ? '-right-2' : '-left-2'
-                      }`}></div>
-                      
-                      <div className="text-yellow-400 font-bold text-lg mb-2">{item.year}</div>
-                      <h3 className="text-xl font-bold text-white mb-3">{item.title}</h3>
-                      <p className="text-neutral-400 leading-relaxed">{item.description}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20 bg-gradient-to-b from-black to-neutral-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Leadership
+              Onboarding
               <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-                Team
+                Timeline
               </span>
             </h2>
             <p className="text-xl text-neutral-400 max-w-3xl mx-auto">
-              Meet the experienced leaders driving ZummitPayments' mission to revolutionize payment processing.
+              Your journey to seamless payment processing starts here. Follow our simple 5-step process.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {leadership.map((leader, index) => (
-              <div key={index} className="glass rounded-2xl p-8 text-center hover:scale-105 transition-all duration-300">
-                <div className="w-24 h-24 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full mx-auto mb-6 flex items-center justify-center">
-                  <svg className="w-12 h-12 text-black" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
-                  </svg>
+          <div className="relative max-w-7xl mx-auto">
+            {/* Enhanced Timeline Line with Gradient */}
+            <div className="absolute top-32 left-0 right-0 h-3 bg-gradient-to-r from-yellow-400 via-orange-500 via-yellow-400 via-orange-500 to-yellow-400 rounded-full hidden lg:block shadow-lg">
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 via-orange-500/20 to-yellow-400/20 rounded-full blur-sm"></div>
+            </div>
+            
+            {/* Timeline Steps with Uniform Design */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+              {/* Step 1 */}
+              <div className="relative group">
+                <div className="glass rounded-3xl p-6 text-center hover:scale-105 transition-all duration-500 hover:shadow-2xl hover:shadow-blue-400/20 border border-blue-400/20 h-80">
+                  {/* Single Number Badge */}
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-black font-bold text-lg shadow-2xl">
+                    1
+                  </div>
+                  
+                  {/* Day Badge */}
+                  <div className="absolute -top-2 -right-2 bg-gradient-to-br from-blue-500 to-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                    1 Day
+                  </div>
+                  
+                  <div className="mt-8 mb-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto flex items-center justify-center mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H6zm1 2a1 1 0 000 2h6a1 1 0 100-2H7zm6 7a1 1 0 011 1v3a1 1 0 11-2 0v-3a1 1 0 011-1zm-3 3a1 1 0 100 2h.01a1 1 0 100-2H10zm-4 1a1 1 0 011-1h.01a1 1 0 110 2H7a1 1 0 01-1-1zm1-4a1 1 0 100 2h.01a1 1 0 100-2H7zm2 0a1 1 0 100 2h.01a1 1 0 100-2H9zm2 0a1 1 0 100 2h.01a1 1 0 100-2H11z" clipRule="evenodd"/>
+                      </svg>
+                    </div>
+                    <h3 className="text-white font-bold text-lg mb-2">Mutual Agreement</h3>
+                    <p className="text-neutral-300 text-sm leading-relaxed">
+                      Mutual agreement w/ the payment processing + equipment. Complete e-doc application
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">{leader.name}</h3>
-                <p className="text-yellow-400 font-semibold mb-4">{leader.position}</p>
-                <p className="text-neutral-400 text-sm leading-relaxed mb-6">{leader.bio}</p>
-                <a 
-                  href={leader.linkedin}
-                  className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full hover:scale-110 transition-transform duration-300"
-                >
-                  <svg className="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                  </svg>
-                </a>
               </div>
-            ))}
+
+              {/* Step 2 */}
+              <div className="relative group">
+                <div className="glass rounded-3xl p-6 text-center hover:scale-105 transition-all duration-500 hover:shadow-2xl hover:shadow-green-400/20 border border-green-400/20 h-80">
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-black font-bold text-lg shadow-2xl">
+                    2
+                  </div>
+                  
+                  <div className="absolute -top-2 -right-2 bg-gradient-to-br from-green-500 to-teal-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                    2 Day
+                  </div>
+                  
+                  <div className="mt-8 mb-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-teal-600 rounded-full mx-auto flex items-center justify-center mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/>
+                      </svg>
+                    </div>
+                    <h3 className="text-white font-bold text-lg mb-2">Underwriting Process</h3>
+                    <p className="text-neutral-300 text-sm leading-relaxed">
+                      Underwriting process (2 business days)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="relative group">
+                <div className="glass rounded-3xl p-6 text-center hover:scale-105 transition-all duration-500 hover:shadow-2xl hover:shadow-purple-400/20 border border-purple-400/20 h-80">
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-black font-bold text-lg shadow-2xl">
+                    3
+                  </div>
+                  
+                  <div className="absolute -top-2 -right-2 bg-gradient-to-br from-purple-500 to-pink-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                    3 Day
+                  </div>
+                  
+                  <div className="mt-8 mb-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full mx-auto flex items-center justify-center mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                      </svg>
+                    </div>
+                    <h3 className="text-white font-bold text-lg mb-2">Continued Process</h3>
+                    <p className="text-neutral-300 text-sm leading-relaxed">
+                      Cont. Underwriting process
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 4 */}
+              <div className="relative group">
+                <div className="glass rounded-3xl p-6 text-center hover:scale-105 transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-400/20 border border-indigo-400/20 h-80">
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-black font-bold text-lg shadow-2xl">
+                    4
+                  </div>
+                  
+                  <div className="absolute -top-2 -right-2 bg-gradient-to-br from-indigo-500 to-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                    4 Day
+                  </div>
+                  
+                  <div className="mt-8 mb-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-full mx-auto flex items-center justify-center mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+                      </svg>
+                    </div>
+                    <h3 className="text-white font-bold text-lg mb-2">Approval Email</h3>
+                    <p className="text-neutral-300 text-sm leading-relaxed">
+                      Approval email<br/>
+                      2 days express shipping
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 5 */}
+              <div className="relative group">
+                <div className="glass rounded-3xl p-6 text-center hover:scale-105 transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-400/20 border border-emerald-400/20 h-80">
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-black font-bold text-lg shadow-2xl">
+                    5
+                  </div>
+                  
+                  <div className="absolute -top-2 -right-2 bg-gradient-to-br from-emerald-500 to-green-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                    5 Day
+                  </div>
+                  
+                  <div className="mt-8 mb-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full mx-auto flex items-center justify-center mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd"/>
+                      </svg>
+                    </div>
+                    <h3 className="text-white font-bold text-lg mb-2">Equipment Delivered</h3>
+                    <p className="text-neutral-300 text-sm leading-relaxed">
+                      Equipment delivered and begin processing payments
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
+
+
 
       <section className="py-20 bg-gradient-to-r from-yellow-400 to-orange-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -326,7 +349,7 @@ export default function Company() {
             Ready to Join Us?
           </h2>
           <p className="text-xl text-black/80 mb-12 max-w-3xl mx-auto">
-            Experience the ZummitPayments difference and see why thousands of businesses trust us with their payment processing.
+            Experience the Zummit Payments difference and see why thousands of businesses trust us with their payment processing.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">

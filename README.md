@@ -1,4 +1,4 @@
-# ZummitPayments - Merchant Services Platform
+# Zummit Payments - Merchant Services Platform
 
 Una plataforma completa para servicios de procesamiento de pagos con tarjetas de crédito, diseñada para ayudar a los comerciantes a ahorrar hasta un 40% en comisiones.
 

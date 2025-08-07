@@ -2,6 +2,9 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import Header from '@/components/Header';
+import FloatingLeadCapture from '@/components/FloatingLeadCapture';
+import { CalendlyButton } from '@/components/CalendlyWidget';
 
 export default function Products() {
   const [activeTab, setActiveTab] = useState('credit-card');
@@ -40,6 +43,16 @@ export default function Products() {
       icon: (
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
           <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 011 1v8a1 1 0 01-1 1H5a1 1 0 01-1-1V7zM9 9a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+        </svg>
+      )
+    },
+    {
+      id: 'gateway',
+      name: 'Payment Gateway',
+      icon: (
+        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 8a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8z"/>
+          <path d="M5 10h10v2H5v-2z"/>
         </svg>
       )
     }
@@ -242,6 +255,56 @@ export default function Products() {
         'Offline payment processing capability',
         'Customer receipt via email or SMS'
       ]
+    },
+    'gateway': {
+      title: 'Payment Gateway',
+      subtitle: 'Secure online payment processing and invoice management powered by Centz',
+      features: [
+        {
+          name: 'Online Invoicing',
+          description: 'Create and send professional invoices with payment links',
+          icon: (
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"/>
+            </svg>
+          )
+        },
+        {
+          name: 'Remote Payment Collection',
+          description: 'Accept payments from anywhere via email and web',
+          icon: (
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+              <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+            </svg>
+          )
+        },
+        {
+          name: 'Secure Processing',
+          description: 'Enterprise-grade security with end-to-end encryption',
+          icon: (
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+            </svg>
+          )
+        },
+        {
+          name: 'Real-time Notifications',
+          description: 'Instant alerts for payments and transaction updates',
+          icon: (
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
+            </svg>
+          )
+        }
+      ],
+      benefits: [
+        'Professional invoice templates with your branding',
+        'Multi-currency support for global businesses',
+        'Automated payment reminders and follow-ups',
+        'Detailed reporting and analytics dashboard',
+        'Integration with popular accounting software'
+      ]
     }
   };
 
@@ -249,8 +312,10 @@ export default function Products() {
 
   return (
     <div className="min-h-screen">
+      <Header />
+      <FloatingLeadCapture pageName="products" />
       
-      <section className="relative py-20 overflow-hidden">
+      <section className="relative py-20 pt-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-dark via-primary-blue to-luxury-purple opacity-90"></div>
         <div className="absolute inset-0">
           <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
@@ -359,7 +424,7 @@ export default function Products() {
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
               Why Choose
               <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-                ZummitPayments?
+                Zummit Payments?
               </span>
             </h2>
           </div>
@@ -412,16 +477,14 @@ export default function Products() {
             Ready to Get Started?
           </h2>
           <p className="text-xl text-black/80 mb-12 max-w-3xl mx-auto">
-            Join thousands of businesses that trust ZummitPayments for their payment processing needs.
+            Join thousands of businesses that trust Zummit Payments for their payment processing needs.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <Link
-              href="/contact"
+            <CalendlyButton 
+              text="Get Free Quote"
               className="bg-black hover:bg-neutral-800 text-white px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all duration-300 hover:scale-105"
-            >
-              Get Free Quote
-            </Link>
+            />
             <a
               href="mailto:Save.zummitpayments@gmail.com"
               className="bg-white/20 hover:bg-white/30 text-black border-2 border-black/20 px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 hover:scale-105 flex items-center space-x-2"

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { CalendlyButton } from './CalendlyWidget';
 
 export default function Header() {
@@ -20,15 +21,17 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           
-          <Link href="/dashboard" className="flex items-center space-x-3 hover:opacity-80 transition-opacity duration-300">
-            <img 
+          <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity duration-300">
+            <Image 
               src="/zummit.png" 
-              alt="ZummitPayments Logo" 
-              className="w-12 h-12 object-contain"
+              alt="Zummit Payments Logo" 
+              width={72}
+              height={72}
+              className="object-contain"
             />
             <div>
-              <h1 className="text-2xl font-bold text-white">ZummitPayments</h1>
-              <p className="text-xs text-neutral-300 leading-none">Premium Processing</p>
+              <h1 className="text-2xl font-bold text-white">Zummit Payments</h1>
+              <p className="text-xs text-neutral-300 leading-none">Merchant & Payment Processing Services</p>
             </div>
           </Link>
 
