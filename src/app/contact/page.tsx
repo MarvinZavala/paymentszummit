@@ -473,7 +473,7 @@ export default function Contact() {
             Ready to Save Money?
           </h2>
           <p className="text-xl text-black/80 mb-12 max-w-3xl mx-auto">
-            Join thousands of businesses already saving up to 40% on their payment processing costs.
+            Join other businesses already saving significant amounts of money on their payment processing costs.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">

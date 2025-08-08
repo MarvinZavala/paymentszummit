@@ -7,7 +7,7 @@ import { CalendlyEmbed, CalendlyButton } from '@/components/CalendlyWidget';
 export default function Dashboard() {
   const [stats] = useState({
     savings: '40%',
-    processing: '$300K+',
+    processing: '$100K+',
     customers: '10,000+',
     uptime: '99.9%'
   });
@@ -190,7 +190,7 @@ export default function Dashboard() {
             Ready to Start Saving?
           </h2>
           <p className="text-xl text-black/80 mb-12 max-w-3xl mx-auto">
-            Join thousands of businesses already saving money with our premium payment processing solutions.
+            Join businesses already saving money with our low rate payment processing solutions 
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">

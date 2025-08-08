@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 
 interface CalendlyWidgetProps {
   url?: string;
@@ -15,21 +16,72 @@ export default function CalendlyWidget({
   height = 700,
   className = ""
 }: CalendlyWidgetProps) {
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://assets.calendly.com/assets/external/widget.js';
-    script.async = true;
-    document.body.appendChild(script);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
-    return () => {
-      document.body.removeChild(script);
-    };
+  useEffect(() => {
+    // Intersection Observer para lazy loading
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const element = document.querySelector('.calendly-container');
+    if (element) {
+      observer.observe(element);
+    }
+
+    return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (!isVisible) return;
+
+    // Cargar script solo cuando sea visible
+    const loadCalendlyScript = () => {
+      if (document.querySelector('script[src*="calendly.com"]')) {
+        setIsLoaded(true);
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://assets.calendly.com/assets/external/widget.js';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => setIsLoaded(true);
+      script.onerror = () => console.warn('Failed to load Calendly script');
+      document.head.appendChild(script);
+    };
+
+    // Delay para evitar bloquear el render inicial
+    const timer = setTimeout(loadCalendlyScript, 100);
+    return () => clearTimeout(timer);
+  }, [isVisible]);
+
   return (
-    <div className={`calendly-inline-widget ${className}`} 
-         data-url={url}
-         style={{ minWidth: `${minWidth}px`, height: `${height}px` }}>
+    <div className={`calendly-container ${className}`}>
+      {isLoaded ? (
+        <div 
+          className="calendly-inline-widget" 
+          data-url={url}
+          style={{ minWidth: `${minWidth}px`, height: `${height}px` }}
+        />
+      ) : (
+        <div 
+          className="flex items-center justify-center bg-neutral-900/50 rounded-lg"
+          style={{ minWidth: `${minWidth}px`, height: `${height}px` }}
+        >
+          <div className="text-center">
+            <div className="animate-spin w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-neutral-400">Loading calendar...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -47,7 +99,7 @@ export function CalendlyEmbed({ className = "" }: { className?: string }) {
         <h3 className="text-2xl font-bold text-white mb-4">Schedule a Consultation</h3>
         <p className="text-neutral-400 mb-8 leading-relaxed">
           Book a free 30-minute consultation with one of our payment processing experts. 
-          We&apos;ll analyze your current setup and show you how to save up to 40% on fees.
+          We&apos;ll analyze your current setup and show you how to save up to 100% on fees.
         </p>
         
         <div className="space-y-4 mb-8">
@@ -82,7 +134,7 @@ export function CalendlyEmbed({ className = "" }: { className?: string }) {
         </button>
         
         <p className="text-neutral-500 text-sm mt-4">
-          Available Monday - Friday, 9 AM - 6 PM EST
+          Available Monday - Sunday, 9 AM - 9 PM EST
         </p>
       </div>
     </div>

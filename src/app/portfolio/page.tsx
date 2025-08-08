@@ -13,8 +13,8 @@ export default function Portfolio() {
     { id: 'all', name: 'All Equipment' },
     { id: 'pos', name: 'POS Systems' },
     { id: 'mobile', name: 'Mobile Solutions' },
-    { id: 'printers', name: 'Printers & Accessories' },
-    { id: 'gateway', name: 'Payment Gateway' }
+    { id: 'gateway', name: 'Payment Gateway' },
+    { id: 'printers', name: 'Printers & Accessories' }
   ];
 
   const equipment = [
@@ -156,7 +156,7 @@ export default function Portfolio() {
         processing: '$50K+/month',
         satisfaction: '5/5 stars'
       },
-      testimonial: 'Zummit Payments transformed our restaurant operations. The system is intuitive and our staff loves it.'
+      testimonial: 'Zummit Payments transformed our restaurant operations. The system is intuitive and our staff loves it. We also got the zero credit card payment processing fees.'
     }
   ];
 
@@ -185,8 +185,8 @@ export default function Portfolio() {
           </h1>
           
           <p className="text-xl md:text-2xl text-neutral-200 mb-12 max-w-4xl mx-auto">
-            Discover our premium Clover POS systems and payment solutions. 
-            Professional equipment designed to grow your business.
+            Discover our premium Point of Sale (POS) systems and payment solutions. 
+            Professional equipment designed to grow your business!
           </p>
 
           <div className="flex flex-wrap justify-center gap-4">
@@ -346,13 +346,54 @@ export default function Portfolio() {
         </div>
       </section>
 
+      {/* Portfolio Section - Casa de RJ */}
+      <section className="py-20 bg-gradient-to-b from-black to-neutral-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="glass rounded-3xl p-8 lg:p-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div>
+                <div className="relative h-80 rounded-2xl overflow-hidden mb-6">
+                  <Image
+                    src="/Casa-rj.png"
+                    alt="Casa de RJ Logo"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-3xl font-bold text-white mb-4">Casa de RJ</h3>
+                <p className="text-yellow-400 font-semibold mb-4">General Construction</p>
+                <p className="text-neutral-300 mb-6">Equipment: Payment Gateway + Invoice Management</p>
+                
+                <div className="grid grid-cols-2 gap-6 mb-8">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-yellow-400 mb-2">+90%</div>
+                    <div className="text-neutral-400 text-sm">Faster Payments</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-yellow-400 mb-2">5/5 stars</div>
+                    <div className="text-neutral-400 text-sm">Client Rating</div>
+                  </div>
+                </div>
+                
+                <blockquote className="text-neutral-300 italic text-lg leading-relaxed border-l-4 border-yellow-400 pl-6">
+                  &ldquo;Zummit Payments gave our clients, another form of payments to speed up the projects. If they were short of cash, now the clients were able to use their credit cards. Plus benefiting their credit cards perks. And they gave us a great processing rate compare to the banks and other competitors. &rdquo;
+                </blockquote>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="py-20 bg-gradient-to-r from-yellow-400 to-orange-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-black mb-6">
             Ready to Upgrade Your Business?
           </h2>
           <p className="text-xl text-black/80 mb-12 max-w-3xl mx-auto">
-            Get professional installation and setup of your new Clover POS system. Our experts handle everything.
+            Get professional installation and setup of your new Point Of Sale (POS) system. Our experts handle everything.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
