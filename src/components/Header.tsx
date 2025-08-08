@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { CalendlyButton } from './CalendlyWidget';
+import GoogleTranslate from './GoogleTranslate';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -48,6 +49,7 @@ export default function Header() {
           </nav>
 
           <div className="hidden lg:flex items-center space-x-4">
+            <GoogleTranslate />
             <a
               href="mailto:Save.zummitpayments@gmail.com"
               className="text-yellow-400 hover:text-yellow-300 font-semibold text-sm flex items-center space-x-2 transition-colors"
@@ -92,6 +94,9 @@ export default function Header() {
                 </Link>
               ))}
               <div className="pt-4 border-t border-white/10 flex flex-col space-y-3">
+                <div className="mb-2">
+                  <GoogleTranslate />
+                </div>
                 <a
                   href="mailto:Save.zummitpayments@gmail.com"
                   className="text-yellow-400 hover:text-yellow-300 font-semibold flex items-center space-x-2"

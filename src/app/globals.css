@@ -3,6 +3,71 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+/* Google Translate Custom Styles */
+#google_translate_element {
+  display: none !important;
+}
+
+.goog-te-banner-frame,
+.goog-te-banner-frame.skiptranslate {
+  display: none !important;
+}
+
+body {
+  top: 0 !important;
+}
+
+.goog-te-balloon-frame {
+  display: none !important;
+}
+
+.goog-tooltip {
+  display: none !important;
+}
+
+.goog-tooltip:hover {
+  display: none !important;
+}
+
+.goog-text-highlight {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Hide Google Translate banner and controls */
+.goog-te-banner-frame.skiptranslate,
+.goog-te-gadget-simple .goog-te-menu-value span {
+  color: white !important;
+}
+
+.goog-te-gadget-simple .goog-te-menu-value {
+  color: white !important;
+}
+
+.goog-te-menu-frame {
+  max-height: 400px !important;
+  overflow-y: auto !important;
+  background: white !important;
+  border: 1px solid #ccc !important;
+}
+
+/* Auto-translation notification animation */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
 :root {
   /* Premium Color Palette */
   --primary-dark: #0f172a;
@@ -48,7 +113,7 @@
 
 body {
   color: var(--neutral-50);
-  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 25%, var(--luxury-purple) 50%, var(--primary-navy) 75%, var(--primary-dark) 100%);
+  background: linear-gradient(to right, var(--primary-blue) 0%, var(--primary-blue) 70%, var(--luxury-purple) 100%);
   font-family: var(--font-primary);
   margin: 0;
   padding: 0;

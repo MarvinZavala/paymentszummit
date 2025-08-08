@@ -55,7 +55,38 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        
+        {/* Hidden Google Translate Element */}
+        <div id="google_translate_element" style={{ display: 'none' }}></div>
+        
         <Analytics />
+        
+        {/* Google Translate Script */}
+        <Script
+          id="google-translate-script"
+          src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+          strategy="afterInteractive"
+        />
+
+        <Script
+          id="google-translate-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              function googleTranslateElementInit() {
+                if (typeof google !== 'undefined' && google.translate && google.translate.TranslateElement) {
+                  new google.translate.TranslateElement({
+                    pageLanguage: 'en',
+                    includedLanguages: 'en,es,pt,fr,it,de',
+                    layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                    autoDisplay: false,
+                    multilanguagePage: true
+                  }, 'google_translate_element');
+                }
+              }
+            `
+          }}
+        />
         
         {/* Tawk.to Live Chat Script */}
         <Script
