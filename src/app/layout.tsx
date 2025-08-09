@@ -77,7 +77,7 @@ export default function RootLayout({
                 if (typeof google !== 'undefined' && google.translate && google.translate.TranslateElement) {
                   new google.translate.TranslateElement({
                     pageLanguage: 'en',
-                    includedLanguages: 'en,es,pt,fr,it,de',
+                    includedLanguages: 'en,es,pt,fr,it,de,nl,zh,ja,ru',
                     layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
                     autoDisplay: false,
                     multilanguagePage: true

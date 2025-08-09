@@ -113,7 +113,7 @@ body {
 
 body {
   color: var(--neutral-50);
-  background: linear-gradient(to right, var(--primary-blue) 0%, var(--primary-blue) 70%, var(--luxury-purple) 100%);
+  background: linear-gradient(to right, var(--primary-blue) 0%, var(--primary-blue) 100%);
   font-family: var(--font-primary);
   margin: 0;
   padding: 0;

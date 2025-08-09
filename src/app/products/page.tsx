@@ -335,12 +335,12 @@ export default function Products() {
             save money, and provide exceptional customer experiences.
           </p>
 
-          <div className="flex flex-wrap justify-center gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap justify-center gap-4 mb-8 max-w-4xl mx-auto">
             {productCategories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setActiveTab(category.id)}
-                className={`flex items-center space-x-3 px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
+                className={`flex items-center justify-center space-x-3 px-6 py-4 rounded-full font-semibold transition-all duration-300 w-full sm:w-auto sm:min-w-[180px] ${
                   activeTab === category.id
                     ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-black'
                     : 'glass border border-white/20 text-white hover:bg-white/10'
@@ -349,7 +349,7 @@ export default function Products() {
                 <span className={activeTab === category.id ? 'text-black' : 'text-yellow-400'}>
                   {category.icon}
                 </span>
-                <span>{category.name}</span>
+                <span className="text-sm sm:text-base">{category.name}</span>
               </button>
             ))}
           </div>
@@ -633,7 +633,7 @@ export default function Products() {
             Ready to Get Started?
           </h2>
           <p className="text-xl text-black/80 mb-12 max-w-3xl mx-auto">
-            Join thousands of businesses that trust Zummit Payments for their payment processing needs.
+            Join the other businesses that trust Zummit Payments for their payment processing integrations. 
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
@@ -649,6 +649,7 @@ export default function Products() {
                 <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
                 <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
               </svg>
+              <span>Email Us</span>
             </a>
           </div>
         </div>

@@ -37,6 +37,24 @@ export default function Portfolio() {
       popular: true
     },
     {
+      id: 9,
+      category: 'gateway',
+      name: 'Payment Gateway',
+      description: 'Secure online payment processing gateway for e-commerce and remote invoicing. Send professional invoices and collect payments remotely. Now supporting cryptocurrency transactions.',
+      image: '/gateway.JPG',
+      features: [
+        'Online invoice generation',
+        'Email payment links',
+        'Mobile-friendly payment pages',
+        'Real-time payment notifications',
+        'Recurring billing options',
+        'Multi-currency support',
+        'Advanced reporting dashboard'
+      ],
+      businessTypes: ['E-commerce', 'Service Providers', 'Consultants'],
+      popular: true
+    },
+    {
       id: 2,
       category: 'mobile',
       name: 'Clover Flex',
@@ -71,24 +89,6 @@ export default function Portfolio() {
       ],
       businessTypes: ['New Businesses', 'Upgrading Merchants', 'Multi-location'],
       popular: false
-    },
-    {
-      id: 9,
-      category: 'gateway',
-      name: 'Payment Gateway',
-      description: 'Secure online payment processing gateway for e-commerce and remote invoicing. Send professional invoices and collect payments remotely. Now supporting cryptocurrency transactions.',
-      image: '/gateway.JPG',
-      features: [
-        'Online invoice generation',
-        'Email payment links',
-        'Mobile-friendly payment pages',
-        'Real-time payment notifications',
-        'Recurring billing options',
-        'Multi-currency support',
-        'Advanced reporting dashboard'
-      ],
-      businessTypes: ['E-commerce', 'Service Providers', 'Consultants'],
-      popular: true
     },
     {
       id: 10,
@@ -148,7 +148,7 @@ export default function Portfolio() {
   const installations = [
     {
       businessName: 'Turos Tacos',
-      location: 'Oakland',
+      location: 'Food Truck',
       equipment: 'Clover Station + Kitchen Printers',
       image: '/merchant.JPG',
       results: {
@@ -264,28 +264,6 @@ export default function Portfolio() {
                   ))}
                 </div>
 
-                <div className="flex gap-4">
-                  <Link
-                    href="/contact"
-                    className={`flex-1 py-3 rounded-full font-bold text-center transition-all duration-300 hover:scale-105 ${
-                      item.popular
-                        ? 'bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black'
-                        : 'glass border border-white/20 text-white hover:bg-white/10'
-                    }`}
-                  >
-                    Get Quote
-                  </Link>
-                  <a
-                    href="mailto:Save.zummitpayments@gmail.com"
-                    className="flex-1 glass border border-white/20 text-white hover:bg-white/10 py-3 rounded-full font-semibold text-center transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-2"
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-                    </svg>
-                    <span>Email</span>
-                  </a>
-                </div>
               </div>
             ))}
           </div>

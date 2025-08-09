@@ -32,7 +32,24 @@ const languages: Language[] = [
   { code: 'fr', name: 'Français', flag: '🇫🇷' },
   { code: 'it', name: 'Italiano', flag: '🇮🇹' },
   { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+  { code: 'nl', name: 'Nederlands', flag: '🇳🇱' },
+  { code: 'zh', name: '中文', flag: '🇨🇳' },
+  { code: 'ja', name: '日本語', flag: '🇯🇵' },
+  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
 ];
+
+const notificationTexts: { [key: string]: { detected: string; translating: string } } = {
+  es: { detected: '¡Detectamos tu idioma!', translating: 'Traduciendo a' },
+  pt: { detected: 'Detectamos seu idioma!', translating: 'Traduzindo para' },
+  fr: { detected: 'Nous avons détecté votre langue!', translating: 'Traduction vers' },
+  it: { detected: 'Abbiamo rilevato la tua lingua!', translating: 'Traducendo in' },
+  de: { detected: 'Wir haben Ihre Sprache erkannt!', translating: 'Übersetzen auf' },
+  nl: { detected: 'We hebben je taal gedetecteerd!', translating: 'Vertalen naar' },
+  zh: { detected: '我们检测到了您的语言！', translating: '正在翻译为' },
+  ja: { detected: 'あなたの言語を検出しました！', translating: '翻訳中' },
+  ru: { detected: 'Мы определили ваш язык!', translating: 'Перевод на' },
+  en: { detected: 'We detected your language!', translating: 'Translating to' }
+};
 
 export default function GoogleTranslate() {
   const [currentLang, setCurrentLang] = useState<Language>(languages[0]);
@@ -152,8 +169,12 @@ export default function GoogleTranslate() {
           <div className="flex items-center space-x-3">
             <span className="text-lg">{currentLang.flag}</span>
             <div>
-              <div className="font-semibold text-sm">¡Detectamos tu idioma!</div>
-              <div className="text-xs opacity-90">Traduciendo a {currentLang.name}...</div>
+              <div className="font-semibold text-sm">
+                {notificationTexts[currentLang.code]?.detected || notificationTexts.en.detected}
+              </div>
+              <div className="text-xs opacity-90">
+                {notificationTexts[currentLang.code]?.translating || notificationTexts.en.translating} {currentLang.name}...
+              </div>
             </div>
           </div>
         </div>

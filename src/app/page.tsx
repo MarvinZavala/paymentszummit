@@ -107,7 +107,7 @@ export default function Home() {
     <div className="min-h-screen">
       <Header />
       
-      <section className="relative py-20 pt-32 overflow-hidden">
+      <section className="relative py-20 pt-32 lg:min-h-screen lg:flex lg:items-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-dark via-primary-blue to-luxury-purple opacity-90"></div>
         <div className="absolute inset-0">
           <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full mix-blend-multiply filter blur-xl animate-breathe"></div>
@@ -115,11 +115,11 @@ export default function Home() {
           <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-orange-500/20 rounded-full mix-blend-multiply filter blur-xl animate-breathe-delay-long"></div>
         </div>
         
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center w-full">
           <div className="animate-float">
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 bg-gradient-to-r from-white via-yellow-200 to-white bg-clip-text text-transparent animate-fade-in">
+            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 bg-gradient-to-r from-white via-yellow-200 to-white bg-clip-text text-transparent animate-fade-in leading-tight pb-2">
               <span className="inline-block animate-slide-up">Welcome to</span>
-              <span className="block bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 bg-clip-text text-transparent animate-slide-up-delay">
+              <span className="block bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 bg-clip-text text-transparent animate-slide-up-delay pb-2">
                 Zummit Payments
               </span>
             </h1>
@@ -131,19 +131,19 @@ export default function Home() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
             <div className="glass rounded-2xl p-6 hover:scale-105 transition-all duration-300">
-              <div className="text-4xl font-bold text-yellow-400 mb-2">{stats.savings}</div>
+              <div className="text-4xl font-bold text-yellow-400 mb-2 leading-tight pb-1">{stats.savings}</div>
               <div className="text-neutral-300 text-sm">Average Savings</div>
             </div>
             <div className="glass rounded-2xl p-6 hover:scale-105 transition-all duration-300">
-              <div className="text-4xl font-bold text-yellow-400 mb-2">{stats.processing}</div>
+              <div className="text-4xl font-bold text-yellow-400 mb-2 leading-tight pb-1">{stats.processing}</div>
               <div className="text-neutral-300 text-sm">Monthly Processing</div>
             </div>
             <div className="glass rounded-2xl p-6 hover:scale-105 transition-all duration-300">
-              <div className="text-4xl font-bold text-yellow-400 mb-2">{stats.customers}</div>
+              <div className="text-4xl font-bold text-yellow-400 mb-2 leading-tight pb-1">{stats.customers}</div>
               <div className="text-neutral-300 text-sm">Happy Customers</div>
             </div>
             <div className="glass rounded-2xl p-6 hover:scale-105 transition-all duration-300">
-              <div className="text-4xl font-bold text-yellow-400 mb-2">{stats.uptime}</div>
+              <div className="text-4xl font-bold text-yellow-400 mb-2 leading-tight pb-1">{stats.uptime}</div>
               <div className="text-neutral-300 text-sm">System Uptime</div>
             </div>
           </div>
@@ -167,9 +167,9 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-20 bg-gradient-to-b from-neutral-900 to-black">
+      <section className="pt-32 pb-20 bg-gradient-to-b from-neutral-900 to-black">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
               Everything You Need to 
               <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
@@ -217,19 +217,6 @@ export default function Home() {
           <p className="text-xl text-black/80 mb-12 max-w-3xl mx-auto">
             Join businesses already saving money with our low rate payment processing solutions 
           </p>
-          
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <CalendlyButton 
-              text="Get Your Free Quote"
-              className="bg-black hover:bg-neutral-800 text-white px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all duration-300 hover:scale-105"
-            />
-            <Link
-              href="/portfolio"
-              className="bg-white/20 hover:bg-white/30 text-black border-2 border-black/20 px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 hover:scale-105"
-            >
-              View Equipment
-            </Link>
-          </div>
         </div>
       </section>
 
