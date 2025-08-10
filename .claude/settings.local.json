@@ -6,7 +6,12 @@
       "Bash(grep:*)",
       "Bash(npm run build:*)",
       "Bash(mv:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(claude mcp add:*)",
+      "Bash(claude mcp:*)",
+      "Bash(cat:*)",
+      "Bash(cp:*)"
     ],
     "deny": []
   }
