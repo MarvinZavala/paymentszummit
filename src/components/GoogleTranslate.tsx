@@ -68,6 +68,7 @@ export default function GoogleTranslate() {
     // Check if user's language is supported and not English
     const supportedLang = languages.find(lang => lang.code === langCode);
     
+    // Only auto-translate if the user's language is NOT English and is supported
     if (supportedLang && langCode !== 'en') {
       console.log(`🌍 Auto-detected language: ${supportedLang.name} (${langCode})`);
       
@@ -86,6 +87,10 @@ export default function GoogleTranslate() {
       setTimeout(() => {
         changeLanguage(supportedLang, true);
       }, 2000); // 2 seconds delay to let the page load
+    } else {
+      // For English users or unsupported languages, mark as already handled to prevent future detection
+      setHasAutoDetected(true);
+      localStorage.setItem('language-auto-applied', 'true');
     }
   };
 
@@ -121,8 +126,16 @@ export default function GoogleTranslate() {
     } else {
       // Only auto-detect if no existing translation cookie and not already detected
       const alreadyApplied = localStorage.getItem('language-auto-applied');
-      if (!alreadyApplied) {
+      const browserLang = navigator.language || navigator.languages[0];
+      const langCode = browserLang.split('-')[0];
+      
+      // Don't auto-detect for English users or if already processed
+      if (!alreadyApplied && langCode !== 'en') {
         setTimeout(detectAndSetLanguage, 3000); // Detect after 3 seconds
+      } else if (langCode === 'en') {
+        // For English users, mark as already handled without showing notification
+        localStorage.setItem('language-auto-applied', 'true');
+        setHasAutoDetected(true);
       }
     }
   }, []);
