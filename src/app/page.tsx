@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { CalendlyEmbed, CalendlyButton } from '@/components/CalendlyWidget';
+import { CalendlyEmbed } from '@/components/CalendlyWidget';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
 import Header from '@/components/Header';
 import { FlipWords } from '@/components/ui/flip-words';
@@ -164,22 +164,6 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <CalendlyButton 
-              text="Schedule Call"
-              className="bg-black hover:bg-neutral-800 text-white px-8 py-4 text-lg shadow-2xl shadow-yellow-400/25 hover:shadow-yellow-400/40"
-            />
-            <a
-              href="mailto:Save.zummitpayments@gmail.com"
-              className="glass border border-white/20 text-white hover:bg-white/10 px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 hover:scale-105 flex items-center space-x-3"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-              </svg>
-              <span>Email Us</span>
-            </a>
-          </div>
         </div>
       </section>
 
