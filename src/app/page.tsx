@@ -9,7 +9,7 @@ import { FlipWords } from '@/components/ui/flip-words';
 
 export default function Home() {
   const [stats] = useState({
-    savings: '40%',
+    savings: '90%',
     processing: '$100K+',
     customers: '10,000+',
     uptime: '99.9%'
