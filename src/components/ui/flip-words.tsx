@@ -71,12 +71,17 @@ export const FlipWords = ({
           animate="animate"
           exit="exit"
           className="col-start-1 row-start-1 flex"
+          translate="no"
+          data-notranslate=""
+          suppressHydrationWarning={true}
         >
           {words[currentIndex].split("").map((letter, letterIndex) => (
             <motion.span
               key={letterIndex}
               variants={letterVariants}
               className={cn("inline-block", className)}
+              translate="no"
+              data-notranslate=""
             >
               {letter === " " ? "\u00A0" : letter}
             </motion.span>

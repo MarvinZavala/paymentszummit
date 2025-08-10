@@ -126,7 +126,11 @@ export default function Home() {
               </h1>
               <h2 className="text-3xl md:text-4xl font-semibold text-neutral-200">
                 Payments made{" "}
-                <span className="inline-block bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 bg-clip-text text-transparent">
+                <span 
+                  className="inline-block bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 bg-clip-text text-transparent"
+                  translate="no"
+                  data-notranslate=""
+                >
                   <FlipWords 
                     words={valueWords} 
                     duration={3000}
