@@ -196,18 +196,6 @@ export default function CreditCardProcessing() {
             Accept all major credit cards with our secure, fast, and reliable payment processing system. Start saving on processing fees today.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
-            <CalendlyButton 
-              text="Get Your Free Quote"
-              className="bg-black hover:bg-neutral-800 text-white px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all duration-300 hover:scale-105"
-            />
-            <Link
-              href="/contact"
-              className="glass border border-white/20 text-white hover:bg-white/10 px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 hover:scale-105"
-            >
-              Contact Sales
-            </Link>
-          </div>
 
           {/* Accepted Cards */}
           <div className="glass rounded-2xl p-8 max-w-4xl mx-auto">
