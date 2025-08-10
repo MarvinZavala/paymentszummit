@@ -329,7 +329,7 @@ export default function CreditCardProcessing() {
               <div className="text-neutral-400 text-sm">Get approved and start processing quickly</div>
             </div>
             <div className="glass rounded-2xl p-8 text-center">
-              <div className="text-4xl font-bold text-yellow-400 mb-2">40%</div>
+              <div className="text-4xl font-bold text-yellow-400 mb-2">100%</div>
               <div className="text-white font-semibold mb-2">Average Savings</div>
               <div className="text-neutral-400 text-sm">Compared to traditional processors</div>
             </div>
