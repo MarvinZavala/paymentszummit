@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { CalendlyEmbed, CalendlyButton } from '@/components/CalendlyWidget';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
 import Header from '@/components/Header';
+import { FlipWords } from '@/components/ui/flip-words';
 
 export default function Home() {
   const [stats] = useState({
@@ -13,6 +14,8 @@ export default function Home() {
     customers: '10,000+',
     uptime: '99.9%'
   });
+
+  const valueWords = ["Simple", "Secure", "Faster", "Smarter", "Cheaper", "Better"];
 
   const [showExitPopup, setShowExitPopup] = useState(false);
 
@@ -116,16 +119,25 @@ export default function Home() {
         </div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center w-full">
-          <div className="animate-float">
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 bg-gradient-to-r from-white via-yellow-200 to-white bg-clip-text text-transparent animate-fade-in leading-tight pb-2">
-              <span className="inline-block animate-slide-up">Welcome to</span>
-              <span className="block bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 bg-clip-text text-transparent animate-slide-up-delay pb-2">
+          <div>
+            <div className="space-y-4">
+              <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 bg-clip-text text-transparent">
                 Zummit Payments
-              </span>
-            </h1>
+              </h1>
+              <h2 className="text-3xl md:text-4xl font-semibold text-neutral-200">
+                Payments made{" "}
+                <span className="inline-block bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 bg-clip-text text-transparent">
+                  <FlipWords 
+                    words={valueWords} 
+                    duration={3000}
+                    className="text-yellow-400 font-bold"
+                  />
+                </span>
+              </h2>
+            </div>
           </div>
           
-          <p className="text-xl md:text-2xl text-neutral-200 mb-12 max-w-4xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl text-neutral-200 mb-12 max-w-4xl mx-auto leading-relaxed mt-8">
            Experience the power of our premium merchant & payment processing services and start saving from 0% on processing fees today.
           </p>
 
