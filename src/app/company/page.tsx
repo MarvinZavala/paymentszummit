@@ -51,7 +51,7 @@ export default function Company() {
     { number: '10,000+', label: 'Happy Customers' },
     { number: '$100K+', label: 'Processed Annually' },
     { number: '99.9%', label: 'System Uptime' },
-    { number: '40%', label: 'Average Savings' }
+    { number: '90%', label: 'Average Savings' }
   ];
 
 
