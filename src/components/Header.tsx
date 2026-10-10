@@ -30,7 +30,7 @@ export default function Header() {
               className="object-contain"
             />
             <div>
-              <h1 className="text-2xl font-bold text-white">Zummit Payments</h1>
+              <span className="block text-2xl font-bold text-white">Zummit Payments</span>
               <p className="text-xs text-neutral-300 leading-none">Merchant & Payment Processing Services</p>
             </div>
           </Link>

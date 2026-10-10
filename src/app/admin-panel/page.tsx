@@ -21,7 +21,7 @@ export default function Dashboard() {
       ),
       title: 'Credit Card Processing',
       description: 'Accept all major credit cards with our secure, fast processing system.',
-      link: '/products/credit-card'
+      link: '/credit-card-processing'
     },
     {
       icon: (
@@ -31,7 +31,7 @@ export default function Dashboard() {
       ),
       title: 'Point of Sale Systems',
       description: 'Modern POS solutions for retail, restaurants, and service businesses.',
-      link: '/products/pos'
+      link: '/portfolio'
     },
     {
       icon: (
@@ -52,7 +52,7 @@ export default function Dashboard() {
       ),
       title: 'E-commerce Integration',
       description: 'Seamless online payment processing for your website or app.',
-      link: '/products/ecommerce'
+      link: '/products'
     },
     {
       icon: (

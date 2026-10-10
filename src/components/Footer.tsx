@@ -10,28 +10,24 @@ export default function Footer() {
     {
       title: 'Solutions',
       links: [
-        { name: 'Credit Card Processing', href: '/products/credit-card' },
-        { name: 'Point of Sale Systems', href: '/products/pos' },
-        { name: 'E-commerce Solutions', href: '/products/ecommerce' },
-        { name: 'Mobile Payments', href: '/products/mobile' }
+        { name: 'Credit Card Processing', href: '/credit-card-processing' },
+        { name: 'Payment Solutions', href: '/products' },
+        { name: 'POS Systems & Equipment', href: '/portfolio' },
+        { name: 'Get a Free Quote', href: '/get-quote' }
       ]
     },
     {
       title: 'Company',
       links: [
         { name: 'About Us', href: '/company' },
-        { name: 'Leadership', href: '/company/leadership' },
-        { name: 'Careers', href: '/company/careers' },
-        { name: 'News & Press', href: '/company/news' }
+        { name: 'Contact Us', href: '/contact' }
       ]
     },
     {
       title: 'Support',
       links: [
-        { name: 'Contact Us', href: '/contact' },
-        { name: 'Technical Support', href: '/support/technical' },
-        { name: 'Account Management', href: '/support/account' },
-        { name: 'Training', href: '/support/training' }
+        { name: 'Help Center & FAQ', href: '/support' },
+        { name: 'Account Management', href: '/support/account' }
       ]
     }
   ];
@@ -112,17 +108,6 @@ export default function Footer() {
               <p className="text-neutral-400 text-sm">
                 © {currentYear} Zummit Payments. All rights reserved.
               </p>
-              <div className="flex space-x-6">
-                <Link href="/legal/privacy" className="text-neutral-400 hover:text-white text-sm transition-colors">
-                  Privacy Policy
-                </Link>
-                <Link href="/legal/terms" className="text-neutral-400 hover:text-white text-sm transition-colors">
-                  Terms of Service
-                </Link>
-                <Link href="/legal/cookies" className="text-neutral-400 hover:text-white text-sm transition-colors">
-                  Cookie Policy
-                </Link>
-              </div>
             </div>
             
             <div className="flex items-center space-x-6">

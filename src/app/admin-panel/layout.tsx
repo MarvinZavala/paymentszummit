@@ -1,5 +1,14 @@
+import type { Metadata } from 'next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { pageMetadata } from '@/lib/site';
+
+export const metadata: Metadata = pageMetadata({
+  title: 'Dashboard',
+  description: 'Zummit Payments dashboard.',
+  path: '/admin-panel',
+  noIndex: true,
+});
 
 export default function DashboardLayout({
   children,
