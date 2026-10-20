@@ -1,332 +1,313 @@
 'use client';
 
-import Link from 'next/link';
-import { useState } from 'react';
-import Header from '@/components/Header';
+import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import FloatingLeadCapture from '@/components/FloatingLeadCapture';
 import { CalendlyButton } from '@/components/CalendlyWidget';
+import CustomerStories from '@/components/sections/CustomerStories';
+import { ButtonLink, CheckIcon } from '@/components/ui/Button';
+import { PageHero, Section, SectionHeading } from '@/components/ui/Layout';
+import { PHONE_DISPLAY, PHONE_HREF } from '@/lib/site';
+import { cn } from '@/lib/utils';
+
+const benefits: { title: string; description: ReactNode }[] = [
+  {
+    title: 'Dedicated account manager',
+    description: 'Your personal point of contact, who knows your business inside and out.',
+  },
+  {
+    title: 'Priority support',
+    description: 'Skip the queue with priority access to our technical support team.',
+  },
+  {
+    title: 'Proactive monitoring',
+    description: 'We monitor your account 24/7 and proactively address any issues.',
+  },
+  {
+    title: 'Direct phone line',
+    description: (
+      <>
+        Direct access to your account manager by phone:{' '}
+        <a href={PHONE_HREF} className="font-semibold text-navy-700 underline underline-offset-4 hover:text-navy-900">
+          {PHONE_DISPLAY}
+        </a>
+      </>
+    ),
+  },
+  {
+    title: 'Business consulting',
+    description: 'Strategic advice to help you grow your business and run it more efficiently.',
+  },
+  {
+    title: 'Regular check-ins',
+    description: 'Scheduled reviews to make sure your payment processing still meets your needs.',
+  },
+];
+
+// `short` labels fit a 2x2 grid of tabs on phones.
+const services = [
+  {
+    id: 'optimization',
+    short: 'Rates',
+    name: 'Rate optimization',
+    title: 'Rate optimization services',
+    description: 'Continuous monitoring and optimization of your processing rates.',
+    features: [
+      {
+        name: 'Quarterly rate reviews',
+        description: 'Regular analysis of your processing rates to make sure you’re getting the best deal.',
+        benefit: 'Competitive rates, reviewed every quarter',
+      },
+      {
+        name: 'Volume-based adjustments',
+        description: 'Automatic rate adjustments as your processing volume grows.',
+        benefit: 'Lower rates as you grow',
+      },
+      {
+        name: 'Industry benchmarking',
+        description: 'Compare your rates against industry standards and competitors.',
+        benefit: 'Stay competitive in your market',
+      },
+      {
+        name: 'Custom pricing models',
+        description: 'Pricing structures tailored to your business model.',
+        benefit: 'Pricing that fits your business',
+      },
+    ],
+  },
+  {
+    id: 'reporting',
+    short: 'Reporting',
+    name: 'Advanced reporting',
+    title: 'Advanced reporting & analytics',
+    description: 'Detailed analytics and insights into your payment processing.',
+    features: [
+      {
+        name: 'Real-time dashboard',
+        description: 'A live view of all your transactions and key metrics.',
+        benefit: 'Make informed decisions quickly',
+      },
+      {
+        name: 'Custom report builder',
+        description: 'Create reports for your specific needs.',
+        benefit: 'Get the data that matters to you',
+      },
+      {
+        name: 'Automated insights',
+        description: 'AI-powered analysis of your payment patterns and trends.',
+        benefit: 'Discover opportunities for growth',
+      },
+      {
+        name: 'Multi-location reporting',
+        description: 'Consolidated reporting across all your business locations.',
+        benefit: 'Manage multiple locations efficiently',
+      },
+    ],
+  },
+  {
+    id: 'integration',
+    short: 'Integration',
+    name: 'System integration',
+    title: 'System integration services',
+    description: 'Integration with the business systems you already use.',
+    features: [
+      {
+        name: 'POS integration',
+        description: 'A direct connection with your existing point-of-sale systems.',
+        benefit: 'No disruption to your operations',
+      },
+      {
+        name: 'E-commerce platforms',
+        description: 'Integration with popular online shopping platforms.',
+        benefit: 'Unified payment processing',
+      },
+      {
+        name: 'Accounting software',
+        description: 'Direct integration with QuickBooks, Xero and other accounting tools.',
+        benefit: 'Streamlined financial management',
+      },
+      {
+        name: 'API development',
+        description: 'Custom API solutions for unique business requirements.',
+        benefit: 'Tailored to your specific needs',
+      },
+    ],
+  },
+  {
+    id: 'compliance',
+    short: 'Compliance',
+    name: 'Compliance management',
+    title: 'Compliance management',
+    description: 'Helping your business stay compliant with industry standards.',
+    features: [
+      {
+        name: 'PCI DSS compliance',
+        description: 'Ongoing monitoring and maintenance of PCI compliance standards.',
+        benefit: 'Avoid costly penalties and breaches',
+      },
+      {
+        name: 'Security audits',
+        description: 'Regular security assessments and vulnerability testing.',
+        benefit: 'Stay ahead of security threats',
+      },
+      {
+        name: 'Regulatory updates',
+        description: 'Stay informed about changing regulations and requirements.',
+        benefit: 'Keep up with current standards',
+      },
+      {
+        name: 'Documentation support',
+        description: 'Help with compliance documentation and reporting.',
+        benefit: 'Simpler compliance management',
+      },
+    ],
+  },
+];
 
 export default function AccountManagement() {
-  const [activeService, setActiveService] = useState('optimization');
+  const [activeService, setActiveService] = useState(services[0].id);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  const accountServices = [
-    {
-      id: 'optimization',
-      name: 'Rate Optimization',
-      icon: '📈',
-      description: 'Continuous monitoring and optimization of your processing rates'
-    },
-    {
-      id: 'reporting',
-      name: 'Advanced Reporting',
-      icon: '📊',
-      description: 'Detailed analytics and insights into your payment processing'
-    },
-    {
-      id: 'integration',
-      name: 'System Integration',
-      icon: '🔗',
-      description: 'Seamless integration with your existing business systems'
-    },
-    {
-      id: 'compliance',
-      name: 'Compliance Management',
-      icon: '🛡️',
-      description: 'Ensuring your business stays compliant with industry standards'
-    }
-  ];
-
-  const serviceDetails = {
-    optimization: {
-      title: 'Rate Optimization Services',
-      features: [
-        {
-          name: 'Quarterly Rate Reviews',
-          description: 'Regular analysis of your processing rates to ensure you\'re getting the best deal',
-          benefit: 'Save up to 40% on processing fees'
-        },
-        {
-          name: 'Volume-Based Adjustments',
-          description: 'Automatic rate adjustments as your processing volume grows',
-          benefit: 'Lower rates as you grow'
-        },
-        {
-          name: 'Industry Benchmarking',
-          description: 'Compare your rates against industry standards and competitors',
-          benefit: 'Stay competitive in your market'
-        },
-        {
-          name: 'Custom Pricing Models',
-          description: 'Tailored pricing structures based on your business model',
-          benefit: 'Pricing that fits your business'
-        }
-      ]
-    },
-    reporting: {
-      title: 'Advanced Reporting & Analytics',
-      features: [
-        {
-          name: 'Real-Time Dashboard',
-          description: 'Live view of all your transactions and key metrics',
-          benefit: 'Make informed decisions instantly'
-        },
-        {
-          name: 'Custom Report Builder',
-          description: 'Create personalized reports for your specific needs',
-          benefit: 'Get the data that matters to you'
-        },
-        {
-          name: 'Automated Insights',
-          description: 'AI-powered analysis of your payment patterns and trends',
-          benefit: 'Discover opportunities for growth'
-        },
-        {
-          name: 'Multi-Location Reporting',
-          description: 'Consolidated reporting across all your business locations',
-          benefit: 'Manage multiple locations efficiently'
-        }
-      ]
-    },
-    integration: {
-      title: 'System Integration Services',
-      features: [
-        {
-          name: 'POS Integration',
-          description: 'Seamless connection with your existing point-of-sale systems',
-          benefit: 'No disruption to your operations'
-        },
-        {
-          name: 'E-commerce Platforms',
-          description: 'Integration with popular online shopping platforms',
-          benefit: 'Unified payment processing'
-        },
-        {
-          name: 'Accounting Software',
-          description: 'Direct integration with QuickBooks, Xero, and other accounting tools',
-          benefit: 'Streamlined financial management'
-        },
-        {
-          name: 'API Development',
-          description: 'Custom API solutions for unique business requirements',
-          benefit: 'Tailored to your specific needs'
-        }
-      ]
-    },
-    compliance: {
-      title: 'Compliance Management',
-      features: [
-        {
-          name: 'PCI DSS Compliance',
-          description: 'Ongoing monitoring and maintenance of PCI compliance standards',
-          benefit: 'Avoid costly penalties and breaches'
-        },
-        {
-          name: 'Security Audits',
-          description: 'Regular security assessments and vulnerability testing',
-          benefit: 'Stay ahead of security threats'
-        },
-        {
-          name: 'Regulatory Updates',
-          description: 'Stay informed about changing regulations and requirements',
-          benefit: 'Always compliant with current standards'
-        },
-        {
-          name: 'Documentation Support',
-          description: 'Help with compliance documentation and reporting',
-          benefit: 'Simplified compliance management'
-        }
-      ]
-    }
+  // Arrow keys move between tabs (WAI-ARIA tabs pattern, automatic activation).
+  const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const last = services.length - 1;
+    const next =
+      event.key === 'ArrowRight'
+        ? (index + 1) % services.length
+        : event.key === 'ArrowLeft'
+          ? (index - 1 + services.length) % services.length
+          : event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+              ? last
+              : null;
+    if (next === null) return;
+    event.preventDefault();
+    setActiveService(services[next].id);
+    tabRefs.current[next]?.focus();
   };
 
-  const accountBenefits = [
-    {
-      icon: '👤',
-      title: 'Dedicated Account Manager',
-      description: 'Your personal point of contact who knows your business inside and out'
-    },
-    {
-      icon: '⚡',
-      title: 'Priority Support',
-      description: 'Skip the queue with priority access to our technical support team'
-    },
-    {
-      icon: '🎯',
-      title: 'Proactive Monitoring',
-      description: 'We monitor your account 24/7 and proactively address any issues'
-    },
-    {
-      icon: '📞',
-      title: 'Direct Phone Line',
-      description: 'Direct access to your account manager via dedicated phone line'
-    },
-    {
-      icon: '💡',
-      title: 'Business Consulting',
-      description: 'Strategic advice to help grow your business and optimize operations'
-    },
-    {
-      icon: '🔄',
-      title: 'Regular Check-ins',
-      description: 'Scheduled reviews to ensure your payment processing meets your needs'
-    }
-  ];
-
-  const currentService = serviceDetails[activeService as keyof typeof serviceDetails];
-
   return (
-    <div className="min-h-screen">
-      <Header />
+    <>
       <FloatingLeadCapture pageName="account-management" />
-      
-      <section className="relative py-20 pt-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-dark via-primary-blue to-luxury-purple opacity-90"></div>
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full mix-blend-multiply filter blur-xl animate-breathe"></div>
-          <div className="absolute top-40 right-10 w-72 h-72 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-xl animate-breathe-delay"></div>
-        </div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-            Account
-            <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-              Management
-            </span>
-          </h1>
-          <p className="text-xl text-neutral-200 mb-12 max-w-3xl mx-auto">
-            Dedicated account management services to help optimize your payment processing and grow your business.
-          </p>
-        </div>
-      </section>
 
-      {/* Account Benefits */}
-      <section className="py-20 bg-gradient-to-b from-neutral-900 to-black">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-6">What You Get</h2>
-            <p className="text-xl text-neutral-400 max-w-3xl mx-auto">
-              Comprehensive account management services designed to maximize your success
-            </p>
-          </div>
+      <PageHero
+        title="Account management"
+        lead="Dedicated account management to help you optimize your payment processing and grow your business."
+        actions={
+          <>
+            <CalendlyButton text="Schedule an account review" size="lg" />
+            <ButtonLink href="/contact" variant="outline-light" size="lg">
+              Contact an account manager
+            </ButtonLink>
+          </>
+        }
+      >
+        <p className="mt-5 text-sm text-navy-300">
+          Prefer the phone? Call{' '}
+          <a href={PHONE_HREF} className="font-semibold text-gold-400 hover:text-white">
+            {PHONE_DISPLAY}
+          </a>
+        </p>
+      </PageHero>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {accountBenefits.map((benefit, index) => (
-              <div key={index} className="glass rounded-2xl p-8 text-center hover:bg-white/10 transition-all duration-300 hover:scale-105">
-                <div className="text-4xl mb-4">{benefit.icon}</div>
-                <h3 className="text-xl font-bold text-white mb-4">{benefit.title}</h3>
-                <p className="text-neutral-400 leading-relaxed">{benefit.description}</p>
-              </div>
+      {/* What every merchant gets: a plain list, grouped two by two */}
+      <Section tone="white" aria-labelledby="benefits-title">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-20">
+          <SectionHeading
+            id="benefits-title"
+            title="What you get"
+            intro="Account management services designed to help your business succeed."
+          />
+          <ul className="grid gap-x-10 border-b border-line sm:grid-cols-2">
+            {benefits.map((benefit) => (
+              <li key={benefit.title} className="border-t border-line py-6">
+                <h3 className="text-lg font-bold text-navy-900">{benefit.title}</h3>
+                <p className="mt-1 text-muted">{benefit.description}</p>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
-      </section>
+      </Section>
 
-      {/* Services Section */}
-      <section className="py-20 bg-neutral-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-6">Our Services</h2>
-            <p className="text-xl text-neutral-400 max-w-3xl mx-auto">
-              Comprehensive services to optimize every aspect of your payment processing
-            </p>
-          </div>
+      {/* Real customers instead of unsourced satisfaction stats */}
+      <Section tone="navy" aria-labelledby="stories-title">
+        <SectionHeading
+          id="stories-title"
+          tone="dark"
+          title="Businesses we work with"
+          intro="Two of the businesses we set up, in their own words."
+        />
+        <CustomerStories className="mt-14" />
+      </Section>
 
-          {/* Service Tabs */}
-          <div className="flex flex-wrap justify-center mb-12 gap-4">
-            {accountServices.map((service) => (
+      {/* Services by area, in tabs */}
+      <Section tone="paper" aria-labelledby="services-title">
+        <SectionHeading
+          id="services-title"
+          title="Our services"
+          intro="Services to optimize every part of your payment processing."
+        />
+
+        <div role="tablist" aria-label="Account services" className="mt-10 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          {services.map((service, i) => {
+            const selected = service.id === activeService;
+            return (
               <button
                 key={service.id}
+                ref={(el) => {
+                  tabRefs.current[i] = el;
+                }}
+                type="button"
+                role="tab"
+                id={`service-tab-${service.id}`}
+                aria-selected={selected}
+                aria-controls={`service-panel-${service.id}`}
+                tabIndex={selected ? 0 : -1}
                 onClick={() => setActiveService(service.id)}
-                className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 flex items-center space-x-2 ${
-                  activeService === service.id
-                    ? 'bg-yellow-400 text-black'
-                    : 'bg-white/10 text-white hover:bg-white/20'
-                }`}
+                onKeyDown={(event) => onTabKeyDown(event, i)}
+                className={cn(
+                  'rounded-full border px-3 py-2.5 text-sm font-semibold transition-colors duration-150 sm:px-4 sm:py-2 sm:text-[0.95rem]',
+                  selected
+                    ? 'border-navy-900 bg-navy-900 text-white'
+                    : 'border-line bg-white text-navy-900 hover:border-navy-900'
+                )}
               >
-                <span>{service.icon}</span>
-                <span>{service.name}</span>
+                <span className="sm:hidden">{service.short}</span>
+                <span className="hidden sm:inline">{service.name}</span>
               </button>
-            ))}
-          </div>
+            );
+          })}
+        </div>
 
-          {/* Service Details */}
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h3 className="text-3xl font-bold text-white mb-4">{currentService.title}</h3>
+        {services.map((service) => (
+          <div
+            key={service.id}
+            role="tabpanel"
+            id={`service-panel-${service.id}`}
+            aria-labelledby={`service-tab-${service.id}`}
+            hidden={service.id !== activeService}
+            tabIndex={0}
+            className="mt-8 overflow-hidden rounded-2xl border border-line bg-white"
+          >
+            <div className="border-b border-line p-7 sm:p-9">
+              <h3 className="font-wide text-2xl font-bold text-navy-900">{service.title}</h3>
+              <p className="mt-2 max-w-prose text-muted">{service.description}</p>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {currentService.features.map((feature, index) => (
-                <div key={index} className="glass rounded-2xl p-8">
-                  <h4 className="text-xl font-bold text-white mb-4">{feature.name}</h4>
-                  <p className="text-neutral-300 mb-4 leading-relaxed">{feature.description}</p>
-                  <div className="flex items-center text-yellow-400">
-                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                    </svg>
-                    <span className="font-semibold">{feature.benefit}</span>
-                  </div>
-                </div>
+            <ul className="grid gap-px bg-line sm:grid-cols-2">
+              {service.features.map((feature) => (
+                <li key={feature.name} className="bg-white p-7 sm:p-9">
+                  <h4 className="text-lg font-bold text-navy-900">{feature.name}</h4>
+                  <p className="mt-1 max-w-prose text-muted">{feature.description}</p>
+                  <p className="mt-4 flex items-start gap-2.5 font-semibold text-navy-900">
+                    <CheckIcon className="mt-0.5 h-4 w-4 text-navy-700" />
+                    {feature.benefit}
+                  </p>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
-        </div>
-      </section>
-
-      {/* Success Stories */}
-      <section className="py-20 bg-gradient-to-b from-black to-neutral-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-6">Success Stories</h2>
-            <p className="text-xl text-neutral-400 max-w-3xl mx-auto">
-              See how our account management services have helped businesses like yours
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="glass rounded-2xl p-8 text-center">
-              <div className="text-4xl font-bold text-yellow-400 mb-2">40%</div>
-              <div className="text-white font-semibold mb-2">Average Savings</div>
-              <div className="text-neutral-400 text-sm">Reduction in processing fees through rate optimization</div>
-            </div>
-            <div className="glass rounded-2xl p-8 text-center">
-              <div className="text-4xl font-bold text-yellow-400 mb-2">24hrs</div>
-              <div className="text-white font-semibold mb-2">Response Time</div>
-              <div className="text-neutral-400 text-sm">Average response time for account management requests</div>
-            </div>
-            <div className="glass rounded-2xl p-8 text-center">
-              <div className="text-4xl font-bold text-yellow-400 mb-2">99.9%</div>
-              <div className="text-white font-semibold mb-2">Client Satisfaction</div>
-              <div className="text-neutral-400 text-sm">Client satisfaction rate with our account management</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-yellow-400 to-orange-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold text-black mb-6">
-            Ready to Optimize Your Account?
-          </h2>
-          <p className="text-xl text-black/80 mb-12 max-w-3xl mx-auto">
-            Get started with dedicated account management and see the difference personalized service makes
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <CalendlyButton 
-              text="Schedule Account Review"
-              className="bg-black hover:bg-neutral-800 text-white px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all duration-300 hover:scale-105"
-            />
-            <Link
-              href="/contact"
-              className="bg-white/20 hover:bg-white/30 text-black border-2 border-black/20 px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 hover:scale-105"
-            >
-              Contact Account Manager
-            </Link>
-          </div>
-        </div>
-      </section>
-    </div>
+        ))}
+      </Section>
+    </>
   );
 }

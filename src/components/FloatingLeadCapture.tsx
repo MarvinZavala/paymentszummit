@@ -1,274 +1,306 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type FormEvent,
+  type InputHTMLAttributes,
+  type KeyboardEvent,
+} from 'react';
 import { supabase, type Lead } from '@/lib/supabase';
+import { buttonClasses, CheckIcon } from '@/components/ui/Button';
+import { PHONE_DISPLAY, PHONE_HREF } from '@/lib/site';
+import { cn } from '@/lib/utils';
 
 interface FloatingLeadCaptureProps {
+  /** The page that mounts the prompt. Exposed as `data-page` so analytics can tell the pages apart. */
   pageName?: string;
 }
 
-export default function FloatingLeadCapture({}: FloatingLeadCaptureProps) {
-  const [isVisible, setIsVisible] = useState(false);
+// Storage keys. The three localStorage keys are the ones the site has always used.
+const SUBMITTED_KEY = 'zummit_lead_submitted';
+const DISMISSED_KEY = 'zummit_lead_dismissed';
+const LAST_SHOWN_KEY = 'zummit_lead_last_shown';
+// Once the prompt has appeared, it doesn't appear again on other pages in the same visit.
+const SESSION_KEY = 'zummit_lead_prompted';
+
+const DISMISS_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+const SCROLL_TRIGGER = 0.5; // half of the page read
+const TIME_TRIGGER_SECONDS = 30; // seconds with the tab visible
+
+const volumeOptions = [
+  { value: '< $5k', label: 'Less than $5k/month' },
+  { value: '$5k - $25k', label: '$5k - $25k/month' },
+  { value: '$25k - $50k', label: '$25k - $50k/month' },
+  { value: '$50k - $100k', label: '$50k - $100k/month' },
+  { value: '$100k - $200k', label: '$100k - $200k/month' },
+  { value: '$200k+', label: '$200k+/month' },
+];
+
+const NAME_PATTERN = /^[\p{L}\s'.-]+$/u;
+const PHONE_PATTERN = /^[\+]?[(]?[\d\s\-\(\)]{10,}$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+type Stage = 'hidden' | 'prompt' | 'form';
+type FieldName = 'businessName' | 'firstName' | 'phone' | 'email';
+type FormState = Record<FieldName | 'processingVolume', string>;
+
+// Storage can throw (private mode, blocked site data), so every access is guarded.
+function storageGet(kind: 'local' | 'session', key: string): string | null {
+  try {
+    return (kind === 'local' ? window.localStorage : window.sessionStorage).getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function storageSet(kind: 'local' | 'session', key: string, value: string) {
+  try {
+    (kind === 'local' ? window.localStorage : window.sessionStorage).setItem(key, value);
+  } catch {
+    // Not critical: the prompt may show again next time.
+  }
+}
+
+function storageRemove(key: string) {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // ignore
+  }
+}
+
+/** Never after a submission, not within 24 hours of a dismissal, and at most once per visit. */
+function canPrompt(): boolean {
+  if (storageGet('local', SUBMITTED_KEY) === 'true') return false;
+
+  const dismissed = storageGet('local', DISMISSED_KEY);
+  const lastShown = storageGet('local', LAST_SHOWN_KEY);
+  if (dismissed && lastShown) {
+    if (Date.now() - parseInt(lastShown, 10) < DISMISS_COOLDOWN_MS) return false;
+    storageRemove(DISMISSED_KEY);
+  }
+
+  return !storageGet('session', SESSION_KEY);
+}
+
+function validateField(field: FieldName, raw: string): string {
+  const value = raw.trim();
+  switch (field) {
+    case 'businessName':
+      if (!value) return 'Enter your business name';
+      if (value.length < 2) return 'Business name must be at least 2 characters';
+      return '';
+    case 'firstName':
+      if (!value) return 'Enter your name';
+      if (value.length < 2) return 'Name must be at least 2 characters';
+      if (!NAME_PATTERN.test(value)) return 'Use only letters, spaces, apostrophes and hyphens in your name';
+      return '';
+    case 'phone':
+      if (!value) return 'Enter your phone number';
+      if (!PHONE_PATTERN.test(value)) return 'Enter a valid phone number, including the area code';
+      return '';
+    case 'email':
+      if (!value) return 'Enter your email address';
+      if (!EMAIL_PATTERN.test(value)) return 'Enter a valid email address, like name@business.com';
+      return '';
+  }
+}
+
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg className={cn('h-5 w-5', className)} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <path strokeLinecap="round" d="M5 5l10 10M15 5L5 15" />
+    </svg>
+  );
+}
+
+function ChevronUpIcon({ className }: { className?: string }) {
+  return (
+    <svg className={cn('h-4 w-4', className)} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 12.5 10 7.5l5 5" />
+    </svg>
+  );
+}
+
+const inputClasses = (hasError: boolean) =>
+  cn(
+    'mt-1.5 block w-full rounded-lg border bg-white px-3.5 py-2.5 text-[1rem] text-ink transition-colors',
+    'focus:outline-none focus:ring-1',
+    hasError
+      ? 'border-red-600 focus:border-red-600 focus:ring-red-600'
+      : 'border-line hover:border-navy-300 focus:border-navy-700 focus:ring-navy-700'
+  );
+
+/**
+ * A small, dismissible offer for a free savings analysis.
+ *
+ * It stays out of the way until the visitor has read about half the page (or spent 30 seconds on it),
+ * then appears as a compact card at the bottom left (a slim bar on phones, clear of the chat bubble on
+ * the right). The form only opens when the visitor asks for it.
+ */
+export default function FloatingLeadCapture({ pageName }: FloatingLeadCaptureProps) {
+  const [stage, setStage] = useState<Stage>('hidden');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [hasBeenShown, setHasBeenShown] = useState(false);
-  
-  // Use refs to track values across event handlers
-  const interestScoreRef = useRef(0);
-  const isTriggeredRef = useRef(false);
-  const timeSpentRef = useRef(0);
-  const scrollDepthRef = useRef(0);
-  const mouseMovementsRef = useRef(0);
-  
-  const [formData, setFormData] = useState({
+  const [submitError, setSubmitError] = useState(false);
+  const [formData, setFormData] = useState<FormState>({
     businessName: '',
     firstName: '',
     phone: '',
     email: '',
-    processingVolume: '$5k - $25k'
+    processingVolume: '$5k - $25k',
   });
+  const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
 
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const panelRef = useRef<HTMLDivElement>(null);
+  const promptRef = useRef<HTMLElement>(null);
+  const successHeadingRef = useRef<HTMLHeadingElement>(null);
+  const fieldRefs = useRef<Partial<Record<FieldName, HTMLInputElement | null>>>({});
+  const previousStage = useRef<Stage>('hidden');
 
-  // Check if form was already submitted or dismissed
+  const uid = useId();
+  const titleId = `${uid}-title`;
+  const leadId = `${uid}-lead`;
+  const fieldId = (name: string) => `${uid}-${name}`;
+
+  // Appear after real engagement: half the page scrolled, or 30 seconds with the tab visible.
   useEffect(() => {
-    const submitted = localStorage.getItem('zummit_lead_submitted');
-    const dismissed = localStorage.getItem('zummit_lead_dismissed');
-    const lastShown = localStorage.getItem('zummit_lead_last_shown');
-    
-    if (submitted === 'true') {
-      setHasBeenShown(true);
-      return;
+    if (!canPrompt()) return;
+
+    let seconds = 0;
+    let timer = 0;
+
+    const stop = () => {
+      window.clearInterval(timer);
+      window.removeEventListener('scroll', onScroll);
+    };
+
+    const show = () => {
+      stop();
+      storageSet('local', LAST_SHOWN_KEY, Date.now().toString());
+      storageSet('session', SESSION_KEY, 'true');
+      setStage('prompt');
+    };
+
+    function onScroll() {
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+      if (scrollable > 0 && window.scrollY / scrollable >= SCROLL_TRIGGER) show();
     }
-    
-    // Don't show again for 24 hours if dismissed
-    if (dismissed && lastShown) {
-      const lastShownTime = parseInt(lastShown);
-      const now = Date.now();
-      const cooldownMs = 24 * 60 * 60 * 1000; // 24 hours
-      
-      if (now - lastShownTime < cooldownMs) {
-        setHasBeenShown(true);
-        return;
-      } else {
-        // Clear old dismissal if cooldown has passed
-        localStorage.removeItem('zummit_lead_dismissed');
-      }
-    }
+
+    timer = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      seconds += 1;
+      if (seconds >= TIME_TRIGGER_SECONDS) show();
+    }, 1000);
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    return stop;
   }, []);
 
-  // Show popup function
-  const showPopup = useCallback(() => {
-    if (hasBeenShown || isTriggeredRef.current || isVisible) {
-      return;
-    }
-    
-    isTriggeredRef.current = true;
-    setIsVisible(true);
-    localStorage.setItem('zummit_lead_last_shown', Date.now().toString());
-  }, [hasBeenShown, isVisible]);
+  // Move focus into the form when it opens, and back to the prompt's button when it closes.
+  useEffect(() => {
+    const previous = previousStage.current;
+    previousStage.current = stage;
 
-  // Add interest points
-  const addInterest = useCallback((points: number) => {
-    if (hasBeenShown || isTriggeredRef.current) return;
-    
-    interestScoreRef.current += points;
-    
-    // Threshold for activation
-    if (interestScoreRef.current >= 40) {
-      showPopup();
+    if (stage === 'form' && previous !== 'form') {
+      panelRef.current?.focus();
+    } else if (stage === 'prompt' && previous === 'form') {
+      const openButtons = promptRef.current?.querySelectorAll<HTMLButtonElement>('[data-open-form]') ?? [];
+      Array.from(openButtons).find((button) => button.offsetParent !== null)?.focus();
     }
-  }, [hasBeenShown, showPopup]);
+  }, [stage]);
+
+  const collapse = useCallback(() => {
+    setStage((current) => (current === 'form' ? 'prompt' : current));
+  }, []);
+
+  // Escape closes the form. On phones the sheet covers the page, so the page behind stops scrolling.
+  useEffect(() => {
+    if (stage !== 'form') return;
+
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        collapse();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+
+    const isPhone = window.matchMedia('(max-width: 639px)').matches;
+    const previousOverflow = document.body.style.overflow;
+    if (isPhone) document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      if (isPhone) document.body.style.overflow = previousOverflow;
+    };
+  }, [stage, collapse]);
 
   useEffect(() => {
-    if (hasBeenShown) {
+    if (isSuccess) successHeadingRef.current?.focus();
+  }, [isSuccess]);
+
+  // Keep Tab inside the open form.
+  const trapFocus = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Tab' || !panelRef.current) return;
+    const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE));
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = document.activeElement;
+    if (event.shiftKey && (active === first || active === panelRef.current)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
+  const dismiss = () => {
+    setStage('hidden');
+    storageSet('local', DISMISSED_KEY, 'true');
+    storageSet('local', LAST_SHOWN_KEY, Date.now().toString());
+  };
+
+  const handleInputChange = (field: keyof FormState, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field !== 'processingVolume' && errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const handleBlur = (field: FieldName) => {
+    // Only re-check fields that already showed an error, so we don't scold people mid-form.
+    if (errors[field] !== undefined) {
+      setErrors((prev) => ({ ...prev, [field]: validateField(field, formData[field]) }));
+    }
+  };
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    setSubmitError(false);
+
+    const fields: FieldName[] = ['businessName', 'firstName', 'phone', 'email'];
+    const nextErrors: Partial<Record<FieldName, string>> = {};
+    for (const field of fields) nextErrors[field] = validateField(field, formData[field]);
+    setErrors(nextErrors);
+
+    const firstInvalid = fields.find((field) => nextErrors[field]);
+    if (firstInvalid) {
+      fieldRefs.current[firstInvalid]?.focus();
       return;
     }
 
-    // Time-based tracking - more aggressive
-    const timeInterval = setInterval(() => {
-      if (isTriggeredRef.current) {
-        clearInterval(timeInterval);
-        return;
-      }
-      
-      timeSpentRef.current += 1;
-      
-      // More frequent time rewards
-      if (timeSpentRef.current === 8) {
-        addInterest(20);
-      } else if (timeSpentRef.current === 15) {
-        addInterest(25);
-      } else if (timeSpentRef.current === 30) {
-        addInterest(30);
-      }
-    }, 1000);
-
-    // Scroll tracking
-    const handleScroll = () => {
-      if (isTriggeredRef.current) return;
-      
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-      
-      const scrollPercent = Math.min((scrollTop / (documentHeight - windowHeight)) * 100, 100);
-      
-      if (scrollPercent > scrollDepthRef.current) {
-        const previousDepth = scrollDepthRef.current;
-        scrollDepthRef.current = scrollPercent;
-        
-        // Reward scroll milestones
-        if (previousDepth < 20 && scrollPercent >= 20) {
-          addInterest(15);
-        } else if (previousDepth < 40 && scrollPercent >= 40) {
-          addInterest(20);
-        } else if (previousDepth < 60 && scrollPercent >= 60) {
-          addInterest(25);
-        }
-      }
-    };
-
-    // Mouse movement tracking
-    const handleMouseMove = () => {
-      if (isTriggeredRef.current) return;
-      
-      mouseMovementsRef.current += 1;
-      
-      if (mouseMovementsRef.current === 30) {
-        addInterest(10);
-      } else if (mouseMovementsRef.current === 60) {
-        addInterest(15);
-      }
-    };
-
-    // Click tracking
-    const handleClick = (e: MouseEvent) => {
-      if (isTriggeredRef.current) return;
-      
-      const target = e.target as HTMLElement;
-      
-      // High value elements
-      if (target.closest('button') || target.closest('a[href*="contact"]') || target.closest('a[href*="quote"]') || target.closest('a[href*="get-quote"]')) {
-        addInterest(35);
-      }
-      // Medium value elements
-      else if (target.closest('a') || target.closest('[role="button"]')) {
-        addInterest(15);
-      }
-      // Any click shows some engagement
-      else {
-        addInterest(5);
-      }
-    };
-
-    // Exit intent detection
-    const handleMouseLeave = (e: MouseEvent) => {
-      if (isTriggeredRef.current) return;
-      
-      // Only trigger on upward movement (exit intent)
-      if (e.clientY <= 10 && e.relatedTarget === null) {
-        showPopup();
-      }
-    };
-
-    // Mobile touch events for better mobile support
-    let touchStartY = 0;
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartY = e.touches[0].clientY;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (isTriggeredRef.current) return;
-      
-      const touchY = e.touches[0].clientY;
-      const touchDiff = touchStartY - touchY;
-      
-      // Add points for touch scrolling
-      if (Math.abs(touchDiff) > 50) {
-        addInterest(3);
-        touchStartY = touchY; // Reset for next measurement
-      }
-    };
-
-    // Add event listeners
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    window.addEventListener('click', handleClick, { passive: true });
-    document.addEventListener('mouseleave', handleMouseLeave);
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: true });
-
-    // Cleanup function
-    return () => {
-      clearInterval(timeInterval);
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('click', handleClick);
-      document.removeEventListener('mouseleave', handleMouseLeave);
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-    };
-  }, [hasBeenShown, addInterest, showPopup]);
-
-  // Form validation
-  const validateField = (field: string, value: string): string => {
-    switch (field) {
-      case 'businessName':
-        if (!value.trim()) return 'Business name is required';
-        if (value.trim().length < 2) return 'Business name must be at least 2 characters';
-        return '';
-      case 'firstName':
-        if (!value.trim()) return 'Name is required';
-        if (value.trim().length < 2) return 'Name must be at least 2 characters';
-        if (!/^[a-zA-Z\s]+$/.test(value.trim())) return 'Name can only contain letters';
-        return '';
-      case 'phone':
-        if (!value.trim()) return 'Phone number is required';
-        const phoneRegex = /^[\+]?[(]?[\d\s\-\(\)]{10,}$/;
-        if (!phoneRegex.test(value.trim())) return 'Please enter a valid phone number';
-        return '';
-      case 'email':
-        if (!value.trim()) return 'Email address is required';
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(value.trim())) return 'Please enter a valid email address';
-        return '';
-      default:
-        return '';
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: {[key: string]: string} = {};
-    
-    newErrors.businessName = validateField('businessName', formData.businessName);
-    newErrors.firstName = validateField('firstName', formData.firstName);
-    newErrors.phone = validateField('phone', formData.phone);
-    newErrors.email = validateField('email', formData.email);
-    
-    Object.keys(newErrors).forEach(key => {
-      if (!newErrors[key]) delete newErrors[key];
-    });
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-
     setIsSubmitting(true);
-    
+
     try {
       const leadData: Omit<Lead, 'id' | 'created_at'> = {
         business_location: 'Yes',
@@ -277,271 +309,239 @@ export default function FloatingLeadCapture({}: FloatingLeadCaptureProps) {
         first_name: formData.firstName,
         last_name: '',
         phone: formData.phone,
-        email: formData.email
+        email: formData.email,
       };
 
-      const { error } = await supabase
-        .from('leads')
-        .insert([leadData])
-        .select();
+      const { error } = await supabase.from('leads').insert([leadData]).select();
 
       if (error) throw error;
       setIsSuccess(true);
-      localStorage.setItem('zummit_lead_submitted', 'true');
-      
-      // Auto close after success message
+      storageSet('local', SUBMITTED_KEY, 'true');
+
+      // Close on its own after the confirmation has been read.
       setTimeout(() => {
-        setIsVisible(false);
+        setStage('hidden');
       }, 4000);
-      
     } catch (error) {
       console.error('Error submitting floating form:', error);
-      alert('There was an error. Please try again.');
+      setSubmitError(true);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleClose = () => {
-    setIsVisible(false);
-    localStorage.setItem('zummit_lead_dismissed', 'true');
-    localStorage.setItem('zummit_lead_last_shown', Date.now().toString());
-  };
+  if (stage === 'hidden') return null;
 
-  if (!isVisible || hasBeenShown) return null;
+  const field = (name: FieldName, label: string, props: InputHTMLAttributes<HTMLInputElement>) => {
+    const error = errors[name];
+    const errorId = `${fieldId(name)}-error`;
+    return (
+      <div>
+        <label htmlFor={fieldId(name)} className="block text-sm font-semibold text-ink">
+          {label}
+        </label>
+        <input
+          ref={(element) => {
+            fieldRefs.current[name] = element;
+          }}
+          id={fieldId(name)}
+          name={name}
+          value={formData[name]}
+          onChange={(event) => handleInputChange(name, event.target.value)}
+          onBlur={() => handleBlur(name)}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          className={inputClasses(Boolean(error))}
+          required
+          {...props}
+        />
+        {error && (
+          <p id={errorId} className="mt-1.5 text-sm font-medium text-red-700">
+            {error}
+          </p>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-fadeIn" />
-      
-      {/* Floating Form - Responsive positioning */}
-      <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-        <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 rounded-2xl shadow-2xl border border-yellow-400/30 w-full max-w-lg mx-auto relative animate-slideUp overflow-hidden">
-          
-          {/* Animated Background Elements */}
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute top-0 left-0 w-32 h-32 bg-yellow-400/10 rounded-full blur-xl animate-breathe"></div>
-            <div className="absolute bottom-0 right-0 w-40 h-40 bg-orange-500/10 rounded-full blur-xl animate-breathe animation-delay-1000"></div>
+      {/* The prompt: a slim bar on phones, a compact card from 640px up */}
+      {stage === 'prompt' && (
+        <aside
+          ref={promptRef}
+          aria-label="Free savings analysis"
+          data-page={pageName}
+          className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 right-24 z-40 sm:bottom-6 sm:left-6 sm:right-auto sm:w-[20rem]"
+        >
+          <div className="flex items-center rounded-full bg-navy-900 text-white shadow-lg shadow-navy-950/25 ring-1 ring-white/15 sm:hidden">
+            <button
+              type="button"
+              data-open-form
+              aria-haspopup="dialog"
+              onClick={() => setStage('form')}
+              className="flex min-h-12 flex-1 items-center gap-2 rounded-full py-2 pl-5 pr-2 text-left text-[0.95rem] font-semibold"
+            >
+              Free savings analysis
+              <ChevronUpIcon className="text-gold-400" />
+            </button>
+            <button
+              type="button"
+              onClick={dismiss}
+              aria-label="Dismiss the savings analysis offer"
+              className="mr-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-navy-200 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <CloseIcon className="h-4 w-4" />
+            </button>
           </div>
 
-          {/* Close Button */}
-          <button
-            onClick={handleClose}
-            className="absolute top-3 right-3 md:top-4 md:right-4 text-white/70 hover:text-white text-xl md:text-2xl font-light transition-all duration-200 hover:rotate-90 transform z-10 w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-full touch-manipulation"
-            aria-label="Close popup"
-          >
-            ×
-          </button>
+          <div className="hidden rounded-2xl bg-navy-900 p-5 text-white shadow-2xl shadow-navy-950/30 ring-1 ring-white/15 sm:block">
+            <div className="flex items-start justify-between gap-4">
+              <p className="font-wide text-lg font-bold leading-snug">Free savings analysis</p>
+              <button
+                type="button"
+                onClick={dismiss}
+                aria-label="Dismiss the savings analysis offer"
+                className="-mr-2 -mt-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-navy-200 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <CloseIcon className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="mt-1.5 text-navy-200">See how much you can save in processing fees.</p>
+            <button
+              type="button"
+              data-open-form
+              aria-haspopup="dialog"
+              onClick={() => setStage('form')}
+              className={buttonClasses('primary', 'sm', 'mt-4')}
+            >
+              Get my free analysis
+            </button>
+          </div>
+        </aside>
+      )}
 
-          <div className="relative p-4 md:p-6">
+      {/* The form, opened on request */}
+      {stage === 'form' && (
+        <>
+          <div className="fixed inset-0 z-[60] bg-navy-950/40" aria-hidden="true" onClick={collapse} />
+          <div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            aria-describedby={isSuccess ? undefined : leadId}
+            tabIndex={-1}
+            onKeyDown={trapFocus}
+            data-page={pageName}
+            className={cn(
+              'fixed inset-x-0 bottom-0 z-[60] max-h-[calc(100dvh-4rem)] overflow-y-auto rounded-t-2xl bg-white text-ink shadow-2xl outline-none',
+              'sm:inset-x-auto sm:bottom-6 sm:left-6 sm:max-h-[calc(100dvh-8rem)] sm:w-[26rem] sm:rounded-2xl'
+            )}
+          >
             {!isSuccess ? (
               <>
-                {/* Header */}
-                <div className="text-center mb-4 md:mb-6">
-                  <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full mx-auto flex items-center justify-center mb-3 md:mb-4 shadow-2xl animate-bounce">
-                    <svg className="w-8 h-8 md:w-10 md:h-10 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                    </svg>
+                <div className="flex items-start justify-between gap-4 border-b border-line px-6 pb-5 pt-6">
+                  <div>
+                    <h2 id={titleId} className="font-wide text-xl font-extrabold text-navy-900 sm:text-2xl">
+                      Get your free savings analysis
+                    </h2>
+                    <p id={leadId} className="mt-2 text-[0.95rem] text-muted">
+                      Tell us about your business. We&apos;ll call you and show you exactly how much you can save.
+                    </p>
                   </div>
-                  
-                  <h2 className="text-white text-xl md:text-2xl lg:text-3xl font-bold mb-2">
-                    🚀 Don&apos;t Miss Out!
-                  </h2>
-                  <p className="text-yellow-100 text-sm mb-2">
-                    <strong>Save up to 40%</strong> on payment processing fees
-                  </p>
-                  <div className="inline-flex items-center space-x-2 bg-red-500/20 border border-red-400/50 rounded-full px-3 py-1">
-                    <div className="w-2 h-2 bg-red-400 rounded-full animate-breathe"></div>
-                    <span className="text-red-200 text-xs font-semibold">LIMITED TIME OFFER</span>
-                  </div>
-                </div>
-
-                {/* Form - Mobile optimized */}
-                <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Business Name *"
-                      value={formData.businessName}
-                      onChange={(e) => handleInputChange('businessName', e.target.value)}
-                      className={`w-full p-3 md:p-4 rounded-lg bg-white/95 text-black text-sm placeholder-gray-500 focus:outline-none focus:ring-2 border transition-all duration-200 touch-manipulation ${
-                        errors.businessName 
-                          ? 'border-red-500 focus:ring-red-400/50' 
-                          : 'border-gray-200 focus:ring-yellow-400/50'
-                      }`}
-                      required
-                    />
-                    {errors.businessName && (
-                      <p className="text-red-400 text-xs mt-1 font-medium">{errors.businessName}</p>
-                    )}
-                  </div>
-                  
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Your Name *"
-                      value={formData.firstName}
-                      onChange={(e) => handleInputChange('firstName', e.target.value)}
-                      className={`w-full p-3 md:p-4 rounded-lg bg-white/95 text-black text-sm placeholder-gray-500 focus:outline-none focus:ring-2 border transition-all duration-200 touch-manipulation ${
-                        errors.firstName 
-                          ? 'border-red-500 focus:ring-red-400/50' 
-                          : 'border-gray-200 focus:ring-yellow-400/50'
-                      }`}
-                      required
-                    />
-                    {errors.firstName && (
-                      <p className="text-red-400 text-xs mt-1 font-medium">{errors.firstName}</p>
-                    )}
-                  </div>
-                  
-                  {/* Mobile-friendly two-column layout */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="relative">
-                      <input
-                        type="tel"
-                        placeholder="Phone *"
-                        value={formData.phone}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                        className={`w-full p-3 md:p-4 rounded-lg bg-white/95 text-black text-sm placeholder-gray-500 focus:outline-none focus:ring-2 border transition-all duration-200 touch-manipulation ${
-                          errors.phone 
-                            ? 'border-red-500 focus:ring-red-400/50' 
-                            : 'border-gray-200 focus:ring-yellow-400/50'
-                        }`}
-                        required
-                      />
-                      {errors.phone && (
-                        <p className="text-red-400 text-xs mt-1 font-medium">{errors.phone}</p>
-                      )}
-                    </div>
-                    
-                    <div className="relative">
-                      <input
-                        type="email"
-                        placeholder="Email *"
-                        value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
-                        className={`w-full p-3 md:p-4 rounded-lg bg-white/95 text-black text-sm placeholder-gray-500 focus:outline-none focus:ring-2 border transition-all duration-200 touch-manipulation ${
-                          errors.email 
-                            ? 'border-red-500 focus:ring-red-400/50' 
-                            : 'border-gray-200 focus:ring-yellow-400/50'
-                        }`}
-                        required
-                      />
-                      {errors.email && (
-                        <p className="text-red-400 text-xs mt-1 font-medium">{errors.email}</p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <select
-                    value={formData.processingVolume}
-                    onChange={(e) => handleInputChange('processingVolume', e.target.value)}
-                    className="w-full p-3 md:p-4 rounded-lg bg-white/95 text-black text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/50 border border-gray-200 transition-all duration-200 touch-manipulation"
-                  >
-                    <option value="< $5k">Less than $5k/month</option>
-                    <option value="$5k - $25k">$5k - $25k/month</option>
-                    <option value="$25k - $50k">$25k - $50k/month</option>
-                    <option value="$50k - $100k">$50k - $100k/month</option>
-                    <option value="$100k - $200k">$100k - $200k/month</option>
-                    <option value="$200k+">$200k+/month</option>
-                  </select>
-
                   <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 hover:from-yellow-500 hover:via-orange-600 hover:to-yellow-500 disabled:from-gray-400 disabled:to-gray-500 text-black font-bold py-3 md:py-4 rounded-lg text-sm transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl touch-manipulation"
+                    type="button"
+                    onClick={collapse}
+                    aria-label="Close"
+                    className="-mr-2 -mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-paper hover:text-navy-900"
                   >
-                    {isSubmitting ? (
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
-                        <span>SUBMITTING...</span>
-                      </div>
-                    ) : (
-                      '💰 CLAIM MY FREE SAVINGS ANALYSIS'
-                    )}
+                    <CloseIcon />
                   </button>
-                </form>
-
-                {/* Trust indicators - Mobile optimized */}
-                <div className="mt-3 md:mt-4 text-center">
-                  <div className="flex items-center justify-center space-x-3 md:space-x-4 text-xs text-gray-300 mb-2">
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
-                      </svg>
-                      <span className="hidden sm:inline">100% Secure</span>
-                      <span className="sm:hidden">Secure</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
-                      </svg>
-                      <span className="hidden sm:inline">No Spam</span>
-                      <span className="sm:hidden">No Spam</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
-                      </svg>
-                      <span className="hidden sm:inline">24h Response</span>
-                      <span className="sm:hidden">Fast Reply</span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-400">
-                    🔥 <strong>2,500+</strong> businesses saved
-                  </p>
                 </div>
+
+                <form
+                  onSubmit={handleSubmit}
+                  noValidate
+                  className="space-y-4 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5"
+                >
+                  {field('businessName', 'Business name', { type: 'text', autoComplete: 'organization' })}
+                  {field('firstName', 'Your name', { type: 'text', autoComplete: 'name' })}
+                  {field('phone', 'Phone', { type: 'tel', autoComplete: 'tel', inputMode: 'tel' })}
+                  {field('email', 'Email', { type: 'email', autoComplete: 'email', inputMode: 'email' })}
+
+                  <div>
+                    <label htmlFor={fieldId('processingVolume')} className="block text-sm font-semibold text-ink">
+                      Monthly processing volume
+                    </label>
+                    <select
+                      id={fieldId('processingVolume')}
+                      name="processingVolume"
+                      value={formData.processingVolume}
+                      onChange={(event) => handleInputChange('processingVolume', event.target.value)}
+                      className={inputClasses(false)}
+                    >
+                      {volumeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {submitError && (
+                    <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                      We couldn&apos;t send your details. Please try again, or call us at{' '}
+                      <a href={PHONE_HREF} className="font-semibold underline underline-offset-2">
+                        {PHONE_DISPLAY}
+                      </a>
+                      .
+                    </p>
+                  )}
+
+                  {/* Buttons stay auto-width so the chat bubble in the corner never sits on top of them. */}
+                  <div className="pt-2">
+                    <button type="submit" disabled={isSubmitting} className={buttonClasses('primary', 'md')}>
+                      {isSubmitting && (
+                        <span
+                          className="h-4 w-4 animate-spin rounded-full border-2 border-navy-950/25 border-t-navy-950"
+                          aria-hidden="true"
+                        />
+                      )}
+                      {isSubmitting ? 'Sending…' : 'Get my free analysis'}
+                    </button>
+                    <p className="mt-3 text-sm text-muted">No commitment required.</p>
+                  </div>
+                </form>
               </>
             ) : (
-              /* Success State */
-              <div className="text-center py-4 md:py-6">
-                <div className="w-16 h-16 md:w-20 md:h-20 bg-green-500 rounded-full mx-auto flex items-center justify-center mb-4 animate-bounce">
-                  <svg className="w-8 h-8 md:w-10 md:h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"></path>
-                  </svg>
-                </div>
-                <h2 className="text-white text-xl md:text-2xl font-bold mb-2">
-                  🎉 Success!
+              <div role="status" className="px-6 pb-[max(1.75rem,env(safe-area-inset-bottom))] pt-7">
+                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-navy-900 text-gold-400">
+                  <CheckIcon />
+                </span>
+                <h2
+                  id={titleId}
+                  ref={successHeadingRef}
+                  tabIndex={-1}
+                  className="mt-5 font-wide text-xl font-extrabold text-navy-900 outline-none sm:text-2xl"
+                >
+                  Your savings analysis is being prepared
                 </h2>
-                <p className="text-green-200 text-sm mb-4">
-                  Your savings analysis is being prepared!
+                <p className="mt-2 text-muted">
+                  Expect our call within 2 hours. We&apos;ll show you exactly how much you can save.
                 </p>
-                <div className="bg-yellow-400/20 border border-yellow-400/50 rounded-lg p-3">
-                  <p className="text-yellow-200 text-sm">
-                    <strong>📞 Expect our call within 2 hours</strong><br />
-                    <span className="text-xs">We&apos;ll show you exactly how much you can save</span>
-                  </p>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setStage('hidden')}
+                  className={buttonClasses('outline-dark', 'sm', 'mt-6')}
+                >
+                  Close
+                </button>
               </div>
             )}
           </div>
-        </div>
-      </div>
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes slideUp {
-          from { transform: translateY(30px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-        
-        .animate-slideUp {
-          animation: slideUp 0.4s ease-out;
-        }
-        
-        .animation-delay-1000 {
-          animation-delay: 1s;
-        }
-      `}</style>
+        </>
+      )}
     </>
   );
 }

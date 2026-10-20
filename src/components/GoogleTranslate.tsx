@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 
 declare global {
   interface Window {
@@ -56,6 +56,12 @@ export default function GoogleTranslate() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hasAutoDetected, setHasAutoDetected] = useState(false);
   const [showAutoNotification, setShowAutoNotification] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const menuId = useId();
+  // Where the menu opens. Measured from the button, so it works in the desktop header and the mobile menu.
+  const [placement, setPlacement] = useState({ up: false, alignRight: true });
 
   // Auto-detect user's language and translate automatically
   const detectAndSetLanguage = () => {
@@ -174,43 +180,127 @@ export default function GoogleTranslate() {
   };
 
 
+  // Menu behaviour (visual layer only): click outside closes, keyboard follows the menu button pattern.
+  useEffect(() => {
+    if (!isDropdownOpen) return;
+
+    const currentIndex = Math.max(
+      0,
+      languages.findIndex((language) => language.code === currentLang.code)
+    );
+    itemRefs.current[currentIndex]?.focus();
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) setIsDropdownOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [isDropdownOpen, currentLang.code]);
+
+  const openMenu = () => {
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (rect) {
+      const menuHeight = 470;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      setPlacement({
+        up: spaceBelow < menuHeight && rect.top > spaceBelow,
+        alignRight: rect.left + rect.width / 2 > window.innerWidth / 2,
+      });
+    }
+    setIsDropdownOpen(true);
+  };
+
+  const closeMenu = (returnFocus: boolean) => {
+    setIsDropdownOpen(false);
+    if (returnFocus) buttonRef.current?.focus();
+  };
+
+  const handleButtonKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      openMenu();
+    } else if (event.key === 'Escape' && isDropdownOpen) {
+      event.preventDefault();
+      closeMenu(true);
+    }
+  };
+
+  const handleMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const items = itemRefs.current.filter((item): item is HTMLButtonElement => item !== null);
+    const index = items.indexOf(document.activeElement as HTMLButtonElement);
+    const focusItem = (next: number) => items[(next + items.length) % items.length]?.focus();
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        focusItem(index + 1);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        focusItem(index - 1);
+        break;
+      case 'Home':
+        event.preventDefault();
+        focusItem(0);
+        break;
+      case 'End':
+        event.preventDefault();
+        focusItem(items.length - 1);
+        break;
+      case 'Escape':
+        event.preventDefault();
+        closeMenu(true);
+        break;
+      case 'Tab':
+        closeMenu(false);
+        break;
+    }
+  };
+
   return (
     <>
       {/* Auto-Translation Notification */}
       {showAutoNotification && (
-        <div className="fixed top-24 right-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slide-in">
-          <div className="flex items-center space-x-3">
-            <span className="text-lg">{currentLang.flag}</span>
-            <div>
-              <div className="font-semibold text-sm">
-                {notificationTexts[currentLang.code]?.detected || notificationTexts.en.detected}
-              </div>
-              <div className="text-xs opacity-90">
-                {notificationTexts[currentLang.code]?.translating || notificationTexts.en.translating} {currentLang.name}...
-              </div>
+        <div
+          role="status"
+          translate="no"
+          className="notranslate fixed right-4 top-24 z-50 flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-xl bg-navy-900 px-5 py-3.5 text-white shadow-xl shadow-navy-950/30 ring-1 ring-white/15"
+        >
+          <GlobeIcon className="h-5 w-5 text-gold-400" />
+          <div>
+            <div className="text-sm font-semibold">
+              {notificationTexts[currentLang.code]?.detected || notificationTexts.en.detected}
+            </div>
+            <div className="text-sm text-navy-200">
+              {notificationTexts[currentLang.code]?.translating || notificationTexts.en.translating} {currentLang.name}...
             </div>
           </div>
         </div>
       )}
 
       {/* Custom Language Selector */}
-      <div className="relative">
+      <div ref={containerRef} className="relative">
         <button
-          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-black/20 hover:bg-black/30 transition-all duration-300 border border-white/10"
-          aria-label="Select Language"
+          ref={buttonRef}
+          type="button"
+          onClick={() => (isDropdownOpen ? setIsDropdownOpen(false) : openMenu())}
+          onKeyDown={handleButtonKeyDown}
+          aria-haspopup="menu"
+          aria-expanded={isDropdownOpen}
+          aria-controls={isDropdownOpen ? menuId : undefined}
+          className="flex items-center gap-2 rounded-full border border-white/10 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:border-white/25 hover:bg-white/10 aria-expanded:border-white/25 aria-expanded:bg-white/10"
         >
-          <span className="text-lg">{currentLang.flag}</span>
-          <span className="text-white font-medium text-sm hidden sm:block">
+          <GlobeIcon className="h-[1.1rem] w-[1.1rem] text-navy-200" />
+          <span className="sr-only">Language: </span>
+          <span translate="no" lang={currentLang.code} className="notranslate">
             {currentLang.name}
           </span>
-          <svg 
-            className={`w-4 h-4 text-white transition-transform duration-200 ${
-              isDropdownOpen ? 'rotate-180' : ''
-            }`} 
-            fill="none" 
-            stroke="currentColor" 
+          <svg
+            className={`h-4 w-4 text-navy-200 transition-transform duration-150 ${isDropdownOpen ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
@@ -218,37 +308,61 @@ export default function GoogleTranslate() {
 
         {/* Dropdown Menu */}
         {isDropdownOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
-            {languages.map((language) => (
-              <button
-                key={language.code}
-                onClick={() => changeLanguage(language)}
-                className={`w-full flex items-center space-x-3 px-4 py-3 hover:bg-gradient-to-r hover:from-yellow-400/20 hover:to-orange-500/20 transition-all duration-200 ${
-                  currentLang.code === language.code 
-                    ? 'bg-gradient-to-r from-yellow-400/10 to-orange-500/10 text-orange-600' 
-                    : 'text-gray-700'
-                }`}
-              >
-                <span className="text-lg">{language.flag}</span>
-                <span className="font-medium">{language.name}</span>
-                {currentLang.code === language.code && (
-                  <svg className="w-4 h-4 ml-auto text-orange-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                )}
-              </button>
-            ))}
+          <div
+            id={menuId}
+            role="menu"
+            aria-label="Choose a language"
+            onKeyDown={handleMenuKeyDown}
+            className={`absolute z-50 w-56 rounded-xl border border-line bg-white py-1.5 text-navy-900 shadow-xl shadow-navy-950/20 ${
+              placement.up ? 'bottom-full mb-2' : 'top-full mt-2'
+            } ${placement.alignRight ? 'right-0' : 'left-0'}`}
+          >
+            {languages.map((language, index) => {
+              const isCurrent = currentLang.code === language.code;
+              return (
+                <button
+                  key={language.code}
+                  ref={(element) => {
+                    itemRefs.current[index] = element;
+                  }}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={isCurrent}
+                  tabIndex={-1}
+                  lang={language.code}
+                  translate="no"
+                  onClick={() => changeLanguage(language)}
+                  className={`notranslate flex w-full items-center gap-3 px-4 py-2.5 text-left text-[0.95rem] text-navy-900 transition-colors hover:bg-paper focus:bg-paper focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-navy-700 ${
+                    isCurrent ? 'font-semibold' : ''
+                  }`}
+                >
+                  <span className="flex-1">{language.name}</span>
+                  {isCurrent && (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-navy-900 text-gold-400" aria-hidden="true">
+                      <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
-
-      {/* Click outside to close dropdown */}
-      {isDropdownOpen && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setIsDropdownOpen(false)}
-        />
-      )}
     </>
+  );
+}
+
+function GlobeIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path strokeLinecap="round" d="M3 12h18M12 3c2.5 2.6 3.75 5.6 3.75 9S14.5 18.4 12 21c-2.5-2.6-3.75-5.6-3.75-9S9.5 5.6 12 3z" />
+    </svg>
   );
 }

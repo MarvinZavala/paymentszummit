@@ -1,430 +1,466 @@
 'use client';
 
-import Link from 'next/link';
-import { useState } from 'react';
 import Image from 'next/image';
-import Header from '@/components/Header';
+import Link from 'next/link';
+import { useId, useState } from 'react';
 import FloatingLeadCapture from '@/components/FloatingLeadCapture';
+import { CalendlyButton } from '@/components/CalendlyWidget';
+import { ArrowIcon, ButtonLink, CheckIcon } from '@/components/ui/Button';
+import { PageHero, Section, SectionHeading } from '@/components/ui/Layout';
+import CustomerStories from '@/components/sections/CustomerStories';
+import { CONTACT_EMAIL } from '@/lib/site';
+import { cn } from '@/lib/utils';
 
-export default function Portfolio() {
-  const [activeCategory, setActiveCategory] = useState('all');
+type CategoryId = 'pos' | 'mobile' | 'gateway' | 'printers';
 
-  const categories = [
-    { id: 'all', name: 'All Equipment' },
-    { id: 'pos', name: 'POS Systems' },
-    { id: 'mobile', name: 'Mobile Solutions' },
-    { id: 'gateway', name: 'Payment Gateway' },
-    { id: 'printers', name: 'Printers & Accessories' }
-  ];
+const categories: { id: 'all' | CategoryId; name: string }[] = [
+  { id: 'all', name: 'All equipment' },
+  { id: 'pos', name: 'POS systems' },
+  { id: 'mobile', name: 'Mobile solutions' },
+  { id: 'gateway', name: 'Payment gateway' },
+  { id: 'printers', name: 'Printers and accessories' },
+];
 
-  const equipment = [
-    {
-      id: 7,
-      category: 'mobile',
-      name: 'Clover Go',
-      description: 'Ultra-portable card reader that turns your smartphone or tablet into a complete POS system.',
-      image: '/merchantclover2.PNG',
-      features: [
-        'Smartphone/tablet compatible',
-        'Chip and contactless payments',
-        'Bluetooth connectivity',
-        'Long battery life',
-        'Compact design',
-        'Quick setup',
-        'Mobile app integration'
-      ],
-      businessTypes: ['Small Business', 'Mobile Vendors', 'Service Providers'],
-      popular: true
-    },
-    {
-      id: 9,
-      category: 'gateway',
-      name: 'Payment Gateway',
-      description: 'Secure online payment processing gateway for e-commerce and remote invoicing. Send professional invoices and collect payments remotely. Now supporting cryptocurrency transactions.',
-      image: '/gateway.JPG',
-      features: [
-        'Online invoice generation',
-        'Email payment links',
-        'Mobile-friendly payment pages',
-        'Real-time payment notifications',
-        'Recurring billing options',
-        'Multi-currency support',
-        'Advanced reporting dashboard'
-      ],
-      businessTypes: ['E-commerce', 'Service Providers', 'Consultants'],
-      popular: true
-    },
-    {
-      id: 2,
-      category: 'mobile',
-      name: 'Clover Flex',
-      description: 'Portable POS that goes wherever your business takes you. Accept payments anywhere with WiFi or cellular connection.',
-      image: '/merchant2.PNG',
-      features: [
-        'Portable handheld design',
-        'Built-in payment processing',
-        'WiFi and 4G connectivity',
-        'Long-lasting battery',
-        'Contactless payments',
-        'Receipt printing',
-        'Inventory tracking'
-      ],
-      businessTypes: ['Food Trucks', 'Pop-up Shops', 'Delivery Services'],
-      popular: true
-    },
-    {
-      id: 8,
-      category: 'pos',
-      name: 'Complete POS Setup',
-      description: 'Full merchant services setup with integrated payment processing and business management tools.',
-      image: '/posmeerchant.JPG',
-      features: [
-        'Complete hardware bundle',
-        'Integrated payment processing',
-        'Business management suite',
-        'Training and support included',
-        'Custom configuration',
-        'Multi-payment options',
-        '24/7 technical support'
-      ],
-      businessTypes: ['New Businesses', 'Upgrading Merchants', 'Multi-location'],
-      popular: false
-    },
-    {
-      id: 10,
-      category: 'pos',
-      name: 'Enterprise POS System',
-      description: 'High-volume merchant solution with advanced analytics and multi-location management capabilities.',
-      image: '/merchantbig.JPG',
-      features: [
-        'Enterprise-grade hardware',
-        'Advanced analytics dashboard',
-        'Multi-location management',
-        'Custom reporting tools',
-        'Scalable architecture',
-        'Priority support',
-        'Advanced inventory management'
-      ],
-      businessTypes: ['Large Retailers', 'Chain Stores', 'Enterprise'],
-      popular: false
-    },
-    {
-      id: 11,
-      category: 'pos',
-      name: 'Premium Merchant Setup',
-      description: 'Complete premium merchant services with high-performance POS systems for growing businesses.',
-      image: '/merchantbig.PNG',
-      features: [
-        'Premium hardware package',
-        'Advanced payment processing',
-        'Customer loyalty programs',
-        'Integrated accounting',
-        'Staff management tools',
-        'Real-time reporting',
-        'Cloud-based system'
-      ],
-      businessTypes: ['Growing Businesses', 'Retail Chains', 'Franchises'],
-      popular: false
-    },
-    {
-      id: 4,
-      category: 'printers',
-      name: 'Kitchen Printers',
-      description: 'Professional receipt and kitchen printers designed for high-volume restaurant environments.',
-      image: '/CLOVERPOSSUSTEMS.PNG',
-      features: [
-        'Impact & Thermal options',
-        'High-speed printing',
-        'Kitchen environment rated',
-        'Easy paper loading',
-        'Reliable connectivity',
-        'Compact footprint'
-      ],
-      businessTypes: ['Restaurants', 'Food Service', 'Quick Service'],
-      popular: false
-    }
-  ];
+type Product = {
+  id: string;
+  category: CategoryId;
+  name: string;
+  description: string;
+  bestFor: string;
+  /** The first three are shown; the rest sit behind "Show all features". */
+  features: string[];
+  popular?: boolean;
+  image: {
+    src: string;
+    alt: string;
+    width: number;
+    height: number;
+    /**
+     * cutout: product shot on a white or transparent background, shown whole with room around it.
+     * framed: photo or graphic with its own background (and sometimes baked-in text), shown whole, never cropped.
+     * cover: scene photo with no text, may fill the panel.
+     */
+    fit: 'cutout' | 'framed' | 'cover';
+    /** Less padding for cutouts with a lot of empty space of their own. */
+    tight?: boolean;
+  };
+};
 
-  const installations = [
-    {
-      businessName: 'Turos Tacos',
-      location: 'Food Truck',
-      equipment: 'Clover Station + Kitchen Printers',
-      image: '/merchant.JPG',
-      results: {
-        efficiency: '+100%',
-        processing: '$50K+/month',
-        satisfaction: '5/5 stars'
-      },
-      testimonial: 'Zummit Payments transformed our restaurant operations. The system is intuitive and our staff loves it. We also got the zero credit card payment processing fees.'
-    }
-  ];
+const products: Product[] = [
+  {
+    id: 'clover-go',
+    category: 'mobile',
+    name: 'Clover Go',
+    description: 'A compact card reader that turns your smartphone or tablet into a complete POS system.',
+    bestFor: 'Small businesses, mobile vendors and service providers',
+    features: [
+      'Works with your smartphone or tablet',
+      'Chip and contactless payments',
+      'Quick setup',
+      'Bluetooth connection',
+      'Long battery life',
+      'Compact design',
+      'Mobile app integration',
+    ],
+    popular: true,
+    image: {
+      src: '/merchantclover2.PNG',
+      alt: 'Clover Go card reader shown with other Clover devices',
+      width: 1024,
+      height: 490,
+      fit: 'cutout',
+      tight: true,
+    },
+  },
+  {
+    id: 'clover-flex',
+    category: 'mobile',
+    name: 'Clover Flex',
+    description: 'A handheld POS that goes wherever your business goes. Take payments anywhere over WiFi or cellular.',
+    bestFor: 'Food trucks, pop-up shops and delivery services',
+    features: [
+      'WiFi and 4G connectivity',
+      'Contactless payments',
+      'Prints receipts',
+      'Portable handheld design',
+      'Payment processing built in',
+      'Long-lasting battery',
+      'Inventory tracking',
+    ],
+    popular: true,
+    image: {
+      src: '/merchant2.PNG',
+      alt: 'Clover Flex handheld payment device',
+      width: 887,
+      height: 661,
+      fit: 'cutout',
+    },
+  },
+  {
+    id: 'complete-pos',
+    category: 'pos',
+    name: 'Complete POS setup',
+    description: 'A full merchant setup with integrated payment processing and business management tools.',
+    bestFor: 'New businesses, merchants upgrading their system and multi-location businesses',
+    features: [
+      'Complete hardware bundle',
+      'Training and support included',
+      'Integrated payment processing',
+      'Business management suite',
+      'Custom configuration',
+      'Multiple payment options',
+      '24/7 technical support',
+    ],
+    image: {
+      src: '/posmeerchant.JPG',
+      alt: 'Clover Mini on a cash drawer with a barcode scanner, a Clover Flex and a PIN pad',
+      width: 1320,
+      height: 800,
+      fit: 'cutout',
+    },
+  },
+  {
+    id: 'enterprise-pos',
+    category: 'pos',
+    name: 'Enterprise POS system',
+    description: 'For high-volume merchants, with advanced analytics and management across several locations.',
+    bestFor: 'Large retailers, chain stores and enterprises',
+    features: [
+      'Multi-location management',
+      'Advanced analytics dashboard',
+      'Priority support',
+      'Enterprise-grade hardware',
+      'Custom reporting tools',
+      'Scalable architecture',
+      'Advanced inventory management',
+    ],
+    image: {
+      src: '/merchantbig.JPG',
+      alt: 'Three self-order kiosks with card readers in a restaurant',
+      width: 729,
+      height: 654,
+      fit: 'framed',
+    },
+  },
+  {
+    id: 'premium-setup',
+    category: 'pos',
+    name: 'Premium merchant setup',
+    description: 'Premium merchant services and high-performance POS systems for growing businesses.',
+    bestFor: 'Growing businesses, retail chains and franchises',
+    features: [
+      'Premium hardware package',
+      'Customer loyalty programs',
+      'Integrated accounting',
+      'Advanced payment processing',
+      'Staff management tools',
+      'Real-time reporting',
+      'Cloud-based system',
+    ],
+    image: {
+      src: '/merchantbig.PNG',
+      alt: 'Self-order kiosk with a touchscreen menu and a card payment device',
+      width: 1200,
+      height: 859,
+      fit: 'cutout',
+      tight: true,
+    },
+  },
+  {
+    id: 'kitchen-printers',
+    category: 'printers',
+    name: 'Kitchen printers',
+    description: 'Receipt and kitchen printers built for busy, high-volume restaurants.',
+    bestFor: 'Restaurants, food service and quick service',
+    features: [
+      'Impact and thermal options',
+      'High-speed printing',
+      'Rated for kitchen environments',
+      'Easy paper loading',
+      'Reliable connectivity',
+      'Compact footprint',
+    ],
+    image: {
+      src: '/CLOVERPOSSUSTEMS.PNG',
+      alt: 'Impact kitchen printer and thermal kitchen printer, the two printer options for Clover POS systems',
+      width: 2240,
+      height: 1260,
+      fit: 'framed',
+    },
+  },
+  {
+    id: 'payment-gateway',
+    category: 'gateway',
+    name: 'Payment gateway',
+    description:
+      'Secure online payments for e-commerce and remote invoicing. Send professional invoices and collect payments from anywhere. Now with cryptocurrency payments.',
+    bestFor: 'E-commerce, service providers and consultants',
+    features: [
+      'Online invoices',
+      'Payment links by email',
+      'Mobile-friendly payment pages',
+      'Real-time payment notifications',
+      'Recurring billing',
+      'Multi-currency support',
+      'Advanced reporting dashboard',
+    ],
+    popular: true,
+    image: {
+      src: '/gateway.JPG',
+      alt: 'Illustration of a laptop with online payment tools next to card terminals and cash',
+      width: 1024,
+      height: 1024,
+      fit: 'cover',
+    },
+  },
+];
 
-  const filteredEquipment = activeCategory === 'all' 
-    ? equipment 
-    : equipment.filter(item => item.category === activeCategory);
+const included = [
+  { title: 'Professional installation', description: 'Expert setup and training.' },
+  { title: 'Warranty and support', description: 'Full warranty coverage.' },
+  { title: 'Competitive pricing', description: 'Rates tailored to your business volume and industry.' },
+];
+
+const VISIBLE_FEATURES = 3;
+const tileSizes = '(min-width: 1024px) 384px, (min-width: 640px) 50vw, 100vw';
+
+function ProductImage({ image, sizes }: { image: Product['image']; sizes: string }) {
+  if (image.fit === 'cover') {
+    return (
+      <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-line bg-white">
+        <Image src={image.src} alt={image.alt} fill sizes={sizes} className="object-cover" />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen">
-      <Header />
+    <div
+      className={cn(
+        'flex aspect-[16/10] items-center justify-center overflow-hidden rounded-2xl border border-line bg-white',
+        image.fit === 'cutout' && !image.tight ? 'p-6 sm:p-8' : 'p-4'
+      )}
+    >
+      <Image
+        src={image.src}
+        alt={image.alt}
+        width={image.width}
+        height={image.height}
+        sizes={sizes}
+        className={cn('h-auto max-h-full w-auto max-w-full', image.fit === 'framed' && 'rounded-lg')}
+      />
+    </div>
+  );
+}
+
+function FeatureList({ features, collapsible, className }: { features: string[]; collapsible: boolean; className?: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const listId = useId();
+  const canCollapse = collapsible && features.length > VISIBLE_FEATURES;
+
+  return (
+    <div className={className}>
+      <h4 className="sr-only">Key features</h4>
+      <ul id={listId} className={cn('gap-x-8 gap-y-2', collapsible ? 'grid' : 'grid sm:grid-cols-2')}>
+        {features.map((feature, i) => (
+          <li
+            key={feature}
+            className={cn('gap-2.5 text-[0.95rem]', canCollapse && !expanded && i >= VISIBLE_FEATURES ? 'hidden' : 'flex')}
+          >
+            <CheckIcon className="mt-0.5 h-4 w-4 text-navy-700" />
+            {feature}
+          </li>
+        ))}
+      </ul>
+      {canCollapse && (
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={listId}
+          onClick={() => setExpanded((open) => !open)}
+          className="mt-3 inline-flex items-center gap-2 py-1 text-sm font-semibold text-navy-700 hover:text-navy-900"
+        >
+          <svg
+            className={cn('h-4 w-4 transition-transform duration-150', expanded && 'rotate-45')}
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" d="M10 4v12M4 10h12" />
+          </svg>
+          {expanded ? 'Show fewer features' : `Show all ${features.length} features`}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Name, description, who it's for and features. Returned as separate blocks so tiles can align them on a subgrid. */
+function ProductText({ product, collapsible }: { product: Product; collapsible: boolean }) {
+  return (
+    <>
+      <div className="mt-6">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <h3 className="text-xl font-bold text-navy-900 sm:text-2xl">{product.name}</h3>
+          {product.popular && (
+            <span className="rounded-full bg-navy-900 px-2.5 py-0.5 text-xs font-semibold text-white">Most popular</span>
+          )}
+        </div>
+        <p className="mt-2 max-w-prose text-muted">{product.description}</p>
+      </div>
+      <p className="mt-4 text-[0.95rem]">
+        <span className="font-semibold text-navy-900">Best for:</span> {product.bestFor}
+      </p>
+      <FeatureList features={product.features} collapsible={collapsible} className="mt-5 border-t border-line pt-5" />
+    </>
+  );
+}
+
+export default function Portfolio() {
+  const [activeCategory, setActiveCategory] = useState<'all' | CategoryId>('all');
+
+  const visible = activeCategory === 'all' ? products : products.filter((item) => item.category === activeCategory);
+
+  return (
+    <>
       <FloatingLeadCapture pageName="portfolio" />
-      
-      <section className="relative py-20 pt-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-dark via-primary-blue to-luxury-purple opacity-90"></div>
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full mix-blend-multiply filter blur-xl animate-breathe"></div>
-          <div className="absolute top-40 right-10 w-72 h-72 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-xl animate-breathe-delay"></div>
-        </div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 animate-fade-in">
-            <span className="inline-block animate-slide-up">Our Merchant</span>
-            <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent animate-slide-up-delay">
-              Equipment
-            </span>
-          </h1>
-          
-          <p className="text-xl md:text-2xl text-neutral-200 mb-12 max-w-4xl mx-auto">
-            Discover our premium Point of Sale (POS) systems and payment solutions. 
-            Professional equipment designed to grow your business!
+
+      <PageHero
+        title="POS systems and card readers, set up for you"
+        lead="Clover point of sale systems, mobile card readers, kitchen printers and an online payment gateway. Our experts handle installation, setup and training."
+        actions={
+          <>
+            <CalendlyButton text="Schedule a free call" size="lg" />
+            <ButtonLink href="/get-quote" variant="outline-light" size="lg">
+              Get a free quote
+            </ButtonLink>
+            <p className="mt-2 basis-full text-sm text-navy-300">Free 30-minute consultation. No commitment required.</p>
+          </>
+        }
+        aside={
+          // Desktop only: on phones the catalog right below shows the same devices, so get people there sooner.
+          <div className="ml-auto hidden max-w-md overflow-hidden rounded-2xl bg-white lg:block">
+            <Image
+              src="/multiplemerchant.PNG"
+              alt="Clover Station, Clover Mini and Clover Flex point of sale devices"
+              width={1000}
+              height={1000}
+              sizes="448px"
+              className="h-auto w-full"
+            />
+          </div>
+        }
+      />
+
+      {/* The catalog: the heart of the page */}
+      <Section tone="paper" aria-labelledby="catalog-title">
+        <SectionHeading
+          id="catalog-title"
+          title="Find the right setup"
+          intro="From a compact card reader for your phone to a POS system that runs several locations."
+        />
+
+        <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div role="group" aria-label="Filter equipment by category" className="flex flex-wrap gap-2">
+            {categories.map((category) => {
+              const count =
+                category.id === 'all' ? products.length : products.filter((p) => p.category === category.id).length;
+              const active = activeCategory === category.id;
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  aria-pressed={active}
+                  aria-controls="equipment-list"
+                  onClick={() => setActiveCategory(category.id)}
+                  className={cn(
+                    'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[0.95rem] font-semibold transition-colors duration-150',
+                    active
+                      ? 'border-navy-900 bg-navy-900 text-white'
+                      : 'border-line bg-white text-navy-900 hover:border-navy-900'
+                  )}
+                >
+                  {category.name}
+                  <span className={cn('text-sm font-normal', active ? 'text-navy-200' : 'text-muted')}>{count}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p aria-live="polite" className="text-sm text-muted">
+            {activeCategory === 'all'
+              ? `Showing all ${products.length} products`
+              : `Showing ${visible.length} of ${products.length} products`}
           </p>
-
-          <div className="flex flex-wrap justify-center gap-4">
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setActiveCategory(category.id)}
-                className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
-                  activeCategory === category.id
-                    ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-black'
-                    : 'glass border border-white/20 text-white hover:bg-white/10'
-                }`}
-              >
-                {category.name}
-              </button>
-            ))}
-          </div>
         </div>
-      </section>
 
-      <section className="py-20 bg-gradient-to-b from-neutral-900 to-black">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {filteredEquipment.map((item) => (
-              <div
-                key={item.id}
-                className={`relative glass rounded-3xl p-8 hover:scale-105 transition-all duration-300 ${
-                  item.popular 
-                    ? 'border-2 border-yellow-400 shadow-2xl shadow-yellow-400/20' 
-                    : 'border border-white/10'
-                }`}
-              >
-                {item.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-6 py-2 rounded-full text-sm font-bold">
-                      Most Popular
-                    </span>
-                  </div>
-                )}
-
-                <div className="mb-8">
-                  <div className="relative h-64 mb-6 rounded-2xl overflow-hidden">
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      fill
-                      className="object-contain"
-                    />
-                  </div>
-                  
-                  <h3 className="text-2xl font-bold text-white mb-2">{item.name}</h3>
-                  <p className="text-neutral-400 mb-6">{item.description}</p>
-                  
-                  <div className="mb-6">
-                    <h4 className="text-yellow-400 font-semibold mb-3">Perfect for:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {item.businessTypes.map((type, index) => (
-                        <span key={index} className="px-3 py-1 bg-yellow-400/20 text-yellow-400 rounded-full text-sm">
-                          {type}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+        <ul id="equipment-list" className="-mb-16 mt-12 grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
+          {visible.map((product) =>
+            product.image.fit === 'cover' ? (
+              // The gateway is software, not a device: give it a full-width row with its features spread out.
+              <li key={product.id} className="grid gap-x-8 pb-16 sm:col-span-2 sm:grid-cols-2 lg:col-span-3 lg:grid-cols-3">
+                <ProductImage image={product.image} sizes={tileSizes} />
+                <div className="lg:col-span-2 sm:[&>:first-child]:mt-0">
+                  <ProductText product={product} collapsible={false} />
                 </div>
+              </li>
+            ) : (
+              // Each tile spans four rows of a subgrid, so image, name, "best for" and features line up across a row.
+              <li key={product.id} className="row-span-4 grid grid-rows-subgrid pb-16">
+                <ProductImage image={product.image} sizes={tileSizes} />
+                <ProductText product={product} collapsible />
+              </li>
+            )
+          )}
+        </ul>
+      </Section>
 
-                <div className="space-y-3 mb-8">
-                  <h4 className="text-white font-semibold mb-4">Key Features:</h4>
-                  {item.features.map((feature, featureIndex) => (
-                    <div key={featureIndex} className="flex items-center">
-                      <svg className="w-4 h-4 text-green-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                      </svg>
-                      <span className="text-neutral-300 text-sm">{feature}</span>
-                    </div>
-                  ))}
-                </div>
+      {/* Proof: two of the installations, with the equipment they run */}
+      <Section tone="navy" aria-labelledby="stories-title">
+        <SectionHeading
+          id="stories-title"
+          tone="dark"
+          title="See it at work in local businesses"
+          intro="A food truck running a Clover Station with kitchen printers, and a construction company that invoices clients through our payment gateway."
+        />
+        <CustomerStories className="mt-14" />
+      </Section>
 
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20 bg-gradient-to-b from-black to-neutral-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Real Installation
-              <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-                Success Story
-              </span>
-            </h2>
-            <p className="text-xl text-neutral-400 max-w-3xl mx-auto">
-              See how we&apos;ve helped local businesses transform their operations with our professional installations.
-            </p>
-          </div>
-
-          {installations.map((installation, index) => (
-            <div key={index} className="glass rounded-3xl p-8 lg:p-12">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                <div>
-                  <div className="relative h-80 rounded-2xl overflow-hidden mb-6">
-                    <Image
-                      src={installation.image}
-                      alt={`Installation at ${installation.businessName}`}
-                      fill
-                      className="object-contain"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="text-3xl font-bold text-white mb-4">{installation.businessName}</h3>
-                  <p className="text-yellow-400 font-semibold mb-4">{installation.location}</p>
-                  <p className="text-neutral-300 mb-6">Equipment: {installation.equipment}</p>
-                  
-                  <div className="grid grid-cols-2 gap-6 mb-8">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-yellow-400 mb-2">{installation.results.efficiency}</div>
-                      <div className="text-neutral-400 text-sm">Efficiency Boost</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-yellow-400 mb-2">{installation.results.satisfaction}</div>
-                      <div className="text-neutral-400 text-sm">Customer Rating</div>
-                    </div>
-                  </div>
-                  
-                  <blockquote className="text-neutral-300 italic text-lg leading-relaxed border-l-4 border-yellow-400 pl-6">
-                    &ldquo;{installation.testimonial}&rdquo;
-                  </blockquote>
-                </div>
-              </div>
+      {/* What comes with the equipment (replaces the old yellow installation band) */}
+      <Section tone="white" aria-labelledby="included-title">
+        <SectionHeading
+          id="included-title"
+          title="Included with your equipment"
+          intro="We install and set up your new POS system. Our experts handle everything."
+        />
+        <dl className="mt-12 grid border-y border-line sm:grid-cols-3">
+          {included.map((item, i) => (
+            <div
+              key={item.title}
+              className={cn('py-7', i > 0 && 'border-t border-line sm:border-l sm:border-t-0 sm:pl-8', i < 2 && 'sm:pr-8')}
+            >
+              <dt className="flex items-center gap-2.5 text-lg font-bold text-navy-900">
+                <CheckIcon className="text-navy-700" />
+                {item.title}
+              </dt>
+              <dd className="mt-1 pl-[1.875rem] text-muted">{item.description}</dd>
             </div>
           ))}
+        </dl>
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-8">
+          <Link href="/contact" className="inline-flex items-center gap-2 font-semibold text-navy-700 hover:text-navy-900">
+            Ask about installation
+            <ArrowIcon />
+          </Link>
+          <a
+            href={`mailto:${CONTACT_EMAIL}`}
+            className="inline-flex items-center gap-2 font-semibold text-navy-700 hover:text-navy-900"
+          >
+            Email us for an equipment quote
+            <ArrowIcon />
+          </a>
         </div>
-      </section>
-
-      {/* Portfolio Section - Casa de RJ */}
-      <section className="py-20 bg-gradient-to-b from-black to-neutral-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="glass rounded-3xl p-8 lg:p-12">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <div>
-                <div className="relative h-80 rounded-2xl overflow-hidden mb-6">
-                  <Image
-                    src="/Casa-rj.png"
-                    alt="Casa de RJ Logo"
-                    fill
-                    className="object-contain"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-3xl font-bold text-white mb-4">Casa de RJ</h3>
-                <p className="text-yellow-400 font-semibold mb-4">General Construction</p>
-                <p className="text-neutral-300 mb-6">Equipment: Payment Gateway + Invoice Management</p>
-                
-                <div className="grid grid-cols-2 gap-6 mb-8">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-yellow-400 mb-2">+90%</div>
-                    <div className="text-neutral-400 text-sm">Faster Payments</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-yellow-400 mb-2">5/5 stars</div>
-                    <div className="text-neutral-400 text-sm">Client Rating</div>
-                  </div>
-                </div>
-                
-                <blockquote className="text-neutral-300 italic text-lg leading-relaxed border-l-4 border-yellow-400 pl-6">
-                  &ldquo;Zummit Payments gave our clients, another form of payments to speed up the projects. If they were short of cash, now the clients were able to use their credit cards. Plus benefiting their credit cards perks. And they gave us a great processing rate compare to the banks and other competitors. &rdquo;
-                </blockquote>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20 bg-gradient-to-r from-yellow-400 to-orange-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-black mb-6">
-            Ready to Upgrade Your Business?
-          </h2>
-          <p className="text-xl text-black/80 mb-12 max-w-3xl mx-auto">
-            Get professional installation and setup of your new Point Of Sale (POS) system. Our experts handle everything.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <Link
-              href="/contact"
-              className="bg-black hover:bg-neutral-800 text-white px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all duration-300 hover:scale-105"
-            >
-              Schedule Installation
-            </Link>
-            <a
-              href="mailto:Save.zummitpayments@gmail.com"
-              className="bg-white/20 hover:bg-white/30 text-black border-2 border-black/20 px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 hover:scale-105 flex items-center space-x-2"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-              </svg>
-              <span>Email Quote</span>
-            </a>
-          </div>
-
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-black/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-black" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
-                </svg>
-              </div>
-              <h3 className="font-bold text-black mb-2">Professional Installation</h3>
-              <p className="text-black/70 text-sm">Expert setup and training</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-black/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-black" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                </svg>
-              </div>
-              <h3 className="font-bold text-black mb-2">Warranty & Support</h3>
-              <p className="text-black/70 text-sm">Full warranty coverage</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-black/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-black" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.51-1.31c-.562-.649-1.413-1.076-2.353-1.253V5z" clipRule="evenodd"/>
-                </svg>
-              </div>
-              <h3 className="font-bold text-black mb-2">Competitive Pricing</h3>
-              <p className="text-black/70 text-sm">Best rates guaranteed</p>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
+      </Section>
+    </>
   );
 }

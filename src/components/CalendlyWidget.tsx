@@ -1,170 +1,151 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
+import { useEffect, useRef, useState } from 'react';
+import { CALENDLY_URL, CONTACT_EMAIL } from '@/lib/site';
+import { buttonClasses, CalendarIcon, CheckIcon, type ButtonSize, type ButtonVariant } from '@/components/ui/Button';
+import { cn } from '@/lib/utils';
 
-interface CalendlyWidgetProps {
-  url?: string;
-  minWidth?: number;
-  height?: number;
-  className?: string;
+declare global {
+  interface Window {
+    Calendly?: {
+      initInlineWidget: (options: { url: string; parentElement: HTMLElement }) => void;
+    };
+  }
 }
 
-export default function CalendlyWidget({ 
-  url = "https://calendly.com/save-zummitpayments/30min?month=2025-08", 
-  minWidth = 320, 
+const SCRIPT_SRC = 'https://assets.calendly.com/assets/external/widget.js';
+
+function loadCalendlyScript(): Promise<void> {
+  if (window.Calendly) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${SCRIPT_SRC}"]`);
+    const script = existing ?? document.createElement('script');
+    script.addEventListener('load', () => resolve(), { once: true });
+    script.addEventListener('error', () => reject(new Error('Calendly failed to load')), { once: true });
+    if (!existing) {
+      script.src = SCRIPT_SRC;
+      script.async = true;
+      document.head.appendChild(script);
+    }
+  });
+}
+
+/**
+ * Inline Calendly scheduler. Loads Calendly's script only when the widget scrolls near
+ * the viewport, then mounts the calendar into this element.
+ */
+export default function CalendlyWidget({
+  url = CALENDLY_URL,
   height = 700,
-  className = ""
-}: CalendlyWidgetProps) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  className,
+}: {
+  url?: string;
+  height?: number;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [status, setStatus] = useState<'idle' | 'ready' | 'error'>('idle');
 
   useEffect(() => {
-    // Intersection Observer para lazy loading
+    const element = ref.current;
+    if (!element) return;
+
+    let cancelled = false;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
+        if (!entry.isIntersecting) return;
+        observer.disconnect();
+        loadCalendlyScript()
+          .then(() => {
+            if (cancelled || !window.Calendly) return;
+            const embedUrl = `${url}${url.includes('?') ? '&' : '?'}hide_gdpr_banner=1&primary_color=0e2152`;
+            window.Calendly.initInlineWidget({ url: embedUrl, parentElement: element });
+            setStatus('ready');
+          })
+          .catch(() => !cancelled && setStatus('error'));
       },
-      { threshold: 0.1 }
+      { rootMargin: '400px 0px' }
     );
+    observer.observe(element);
 
-    const element = document.querySelector('.calendly-container');
-    if (element) {
-      observer.observe(element);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!isVisible) return;
-
-    // Cargar script solo cuando sea visible
-    const loadCalendlyScript = () => {
-      if (document.querySelector('script[src*="calendly.com"]')) {
-        setIsLoaded(true);
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = 'https://assets.calendly.com/assets/external/widget.js';
-      script.async = true;
-      script.defer = true;
-      script.onload = () => setIsLoaded(true);
-      script.onerror = () => console.warn('Failed to load Calendly script');
-      document.head.appendChild(script);
+    return () => {
+      cancelled = true;
+      observer.disconnect();
     };
-
-    // Delay para evitar bloquear el render inicial
-    const timer = setTimeout(loadCalendlyScript, 100);
-    return () => clearTimeout(timer);
-  }, [isVisible]);
+  }, [url]);
 
   return (
-    <div className={`calendly-container ${className}`}>
-      {isLoaded ? (
-        <div 
-          className="calendly-inline-widget" 
-          data-url={url}
-          style={{ minWidth: `${minWidth}px`, height: `${height}px` }}
-        />
-      ) : (
-        <div 
-          className="flex items-center justify-center bg-neutral-900/50 rounded-lg"
-          style={{ minWidth: `${minWidth}px`, height: `${height}px` }}
-        >
-          <div className="text-center">
-            <div className="animate-spin w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-neutral-400">Loading calendar...</p>
-          </div>
+    <div className={cn('relative overflow-hidden rounded-2xl bg-white', className)} style={{ height }}>
+      <div ref={ref} className="h-full w-full" />
+      {status !== 'ready' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center text-muted">
+          {status === 'error' ? (
+            <>
+              <p className="font-semibold text-ink">The calendar didn&apos;t load.</p>
+              <a href={url} target="_blank" rel="noopener noreferrer" className="font-semibold text-navy-700 underline underline-offset-4">
+                Open the scheduling page in a new tab
+              </a>
+            </>
+          ) : (
+            <>
+              <span className="h-8 w-8 animate-spin rounded-full border-2 border-navy-900/15 border-t-navy-900" aria-hidden="true" />
+              <p>Loading available times…</p>
+            </>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-// Embedded Calendly Widget Component
-export function CalendlyEmbed({ className = "" }: { className?: string }) {
-  return (
-    <div className={`calendly-embed ${className}`}>
-      <div className="glass rounded-3xl p-8 text-center">
-        <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg className="w-10 h-10 text-black" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
-          </svg>
-        </div>
-        <h3 className="text-2xl font-bold text-white mb-4">Schedule a Consultation</h3>
-        <p className="text-neutral-400 mb-8 leading-relaxed">
-          Book a free 30-minute consultation with one of our payment processing experts. 
-          We&apos;ll analyze your current setup and show you how to save up to 100% on fees.
-        </p>
-        
-        <div className="space-y-4 mb-8">
-          <div className="flex items-center justify-center space-x-3">
-            <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-            </svg>
-            <span className="text-neutral-300">Free consultation & cost analysis</span>
-          </div>
-          <div className="flex items-center justify-center space-x-3">
-            <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-            </svg>
-            <span className="text-neutral-300">Custom pricing proposal</span>
-          </div>
-          <div className="flex items-center justify-center space-x-3">
-            <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-            </svg>
-            <span className="text-neutral-300">No commitment required</span>
-          </div>
-        </div>
-
-        <button 
-          onClick={() => {
-            // You can replace this with actual Calendly popup functionality
-            window.open('https://calendly.com/save-zummitpayments/30min?month=2025-08', '_blank');
-          }}
-          className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black px-8 py-4 rounded-full font-bold text-lg shadow-lg shadow-yellow-400/25 hover:shadow-yellow-400/40 transition-all duration-300 hover:scale-105"
-        >
-          Schedule Free Consultation
-        </button>
-        
-        <p className="text-neutral-500 text-sm mt-4">
-          Available Monday - Sunday, 9 AM - 9 PM EST
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// Calendly Popup Button Component
-export function CalendlyButton({ 
-  text = "Schedule Meeting",
-  className = "",
-  url = "https://calendly.com/save-zummitpayments/30min?month=2025-08"
+/** Button that opens the Calendly scheduling page in a new tab. */
+export function CalendlyButton({
+  text = 'Schedule a free call',
+  className,
+  url = CALENDLY_URL,
+  variant = 'primary',
+  size = 'md',
+  showIcon = true,
 }: {
   text?: string;
   className?: string;
   url?: string;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  showIcon?: boolean;
 }) {
-  const openCalendly = () => {
-    // Always open in new window for reliability
-    window.open(url, '_blank');
-  };
-
   return (
-    <button 
-      onClick={openCalendly}
-      className={`bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black px-6 py-3 rounded-full font-semibold transition-all duration-300 hover:scale-105 flex items-center space-x-2 ${className}`}
-    >
-      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-        <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
-      </svg>
+    <a href={url} target="_blank" rel="noopener noreferrer" className={buttonClasses(variant, size, className)}>
+      {showIcon && <CalendarIcon />}
       <span>{text}</span>
-    </button>
+    </a>
+  );
+}
+
+/** Compact booking card for pages that don't embed the full calendar. */
+export function CalendlyEmbed({ className }: { className?: string }) {
+  return (
+    <div className={cn('rounded-2xl border border-line bg-white p-8 sm:p-10', className)}>
+      <h3 className="font-wide text-2xl font-bold text-ink">Schedule a free consultation</h3>
+      <p className="mt-3 max-w-prose text-muted">
+        Book a free 30-minute call with one of our payment processing experts. We&apos;ll review your current setup and show you
+        where you can save on fees.
+      </p>
+      <ul className="mt-6 space-y-3">
+        {['Free consultation & cost analysis', 'Custom pricing proposal', 'No commitment required'].map((item) => (
+          <li key={item} className="flex items-start gap-3 text-ink">
+            <CheckIcon className="mt-0.5 text-navy-700" />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+        <CalendlyButton text="Schedule a free call" size="lg" />
+        <a href={`mailto:${CONTACT_EMAIL}`} className="font-semibold text-navy-700 underline-offset-4 hover:underline">
+          Or email us
+        </a>
+      </div>
+      <p className="mt-4 text-sm text-muted">Calls available Monday to Sunday, 9 AM to 9 PM EST.</p>
+    </div>
   );
 }

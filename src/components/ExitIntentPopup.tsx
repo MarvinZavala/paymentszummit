@@ -1,27 +1,131 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { supabase, type Lead } from '@/lib/supabase';
+import { buttonClasses, CheckIcon } from '@/components/ui/Button';
+import { PHONE_DISPLAY, PHONE_HREF } from '@/lib/site';
+import { cn } from '@/lib/utils';
 
 interface ExitIntentPopupProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const volumeOptions = [
+  { value: '< $5k', label: 'Less than $5k/month' },
+  { value: '$5k - $25k', label: '$5k - $25k/month' },
+  { value: '$25k - $50k', label: '$25k - $50k/month' },
+  { value: '$50k - $100k', label: '$50k - $100k/month' },
+  { value: '$100k - $200k', label: '$100k - $200k/month' },
+  { value: '$200k+', label: '$200k+/month' },
+];
+
+const NAME_PATTERN = /^[\p{L}\s'.-]+$/u;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+type FieldName = 'businessName' | 'firstName' | 'email';
+
+function validateField(field: FieldName, raw: string): string {
+  const value = raw.trim();
+  switch (field) {
+    case 'businessName':
+      return value ? '' : 'Enter your business name';
+    case 'firstName':
+      if (!value) return 'Enter your name';
+      if (!NAME_PATTERN.test(value)) return 'Use only letters, spaces, apostrophes and hyphens in your name';
+      return '';
+    case 'email':
+      if (!value) return 'Enter your email address';
+      if (!EMAIL_PATTERN.test(value)) return 'Enter a valid email address, like name@business.com';
+      return '';
+  }
+}
+
+const inputClasses = (hasError: boolean) =>
+  cn(
+    'mt-1.5 block w-full rounded-lg border bg-white px-3.5 py-2.5 text-[1rem] text-ink transition-colors',
+    'focus:outline-none focus:ring-1',
+    hasError
+      ? 'border-red-600 focus:border-red-600 focus:ring-red-600'
+      : 'border-line hover:border-navy-300 focus:border-navy-700 focus:ring-navy-700'
+  );
+
+/** Short "before you go" form for a free savings analysis. The parent decides when to open it. */
 export default function ExitIntentPopup({ isOpen, onClose }: ExitIntentPopupProps) {
   const [formData, setFormData] = useState({
     businessName: '',
     firstName: '',
     email: '',
-    processingVolume: '$5k - $25k'
+    processingVolume: '$5k - $25k',
   });
+  const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const fieldRefs = useRef<Partial<Record<FieldName, HTMLInputElement | null>>>({});
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
+  const uid = useId();
+  const titleId = `${uid}-title`;
+  const fieldId = (name: string) => `${uid}-${name}`;
+
+  // Focus moves into the dialog, Escape closes it, and focus goes back where it was afterwards.
+  useEffect(() => {
+    if (!isOpen) return;
+    const returnFocusTo = document.activeElement as HTMLElement | null;
+    panelRef.current?.focus();
+
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCloseRef.current();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      returnFocusTo?.focus?.();
+    };
+  }, [isOpen]);
+
+  const trapFocus = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Tab' || !panelRef.current) return;
+    const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE));
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = document.activeElement;
+    if (event.shiftKey && (active === first || active === panelRef.current)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.businessName.trim() || !formData.firstName.trim() || !formData.email.trim()) {
+    setSubmitError(false);
+
+    const fields: FieldName[] = ['businessName', 'firstName', 'email'];
+    const nextErrors: Partial<Record<FieldName, string>> = {};
+    for (const field of fields) nextErrors[field] = validateField(field, formData[field]);
+    setErrors(nextErrors);
+    const firstInvalid = fields.find((field) => nextErrors[field]);
+    if (firstInvalid) {
+      fieldRefs.current[firstInvalid]?.focus();
       return;
     }
 
@@ -33,141 +137,152 @@ export default function ExitIntentPopup({ isOpen, onClose }: ExitIntentPopupProp
         business_name: formData.businessName,
         first_name: formData.firstName,
         last_name: '', // Optional in mini form
-        phone: '', // Optional in mini form  
-        email: formData.email
+        phone: '', // Optional in mini form
+        email: formData.email,
       };
 
-      const { data, error } = await supabase
-        .from('leads')
-        .insert([leadData])
-        .select();
+      const { error } = await supabase.from('leads').insert([leadData]).select();
 
       if (error) throw error;
 
-      console.log('Exit-intent lead submitted:', data);
       setIsSuccess(true);
-      
+
       // Auto close after 2 seconds
       setTimeout(() => {
         onClose();
         setIsSuccess(false);
       }, 2000);
-      
     } catch (error) {
       console.error('Error submitting exit-intent form:', error);
-      alert('There was an error. Please try again.');
+      setSubmitError(true);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof typeof formData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field !== 'processingVolume' && errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: '' }));
+    }
   };
 
   if (!isOpen) return null;
 
+  const field = (name: FieldName, label: string, type: string, autoComplete: string) => {
+    const error = errors[name];
+    const errorId = `${fieldId(name)}-error`;
+    return (
+      <div>
+        <label htmlFor={fieldId(name)} className="block text-sm font-semibold text-ink">
+          {label}
+        </label>
+        <input
+          ref={(element) => {
+            fieldRefs.current[name] = element;
+          }}
+          id={fieldId(name)}
+          name={name}
+          type={type}
+          autoComplete={autoComplete}
+          value={formData[name]}
+          onChange={(event) => handleInputChange(name, event.target.value)}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          className={inputClasses(Boolean(error))}
+          required
+        />
+        {error && (
+          <p id={errorId} className="mt-1.5 text-sm font-medium text-red-700">
+            {error}
+          </p>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-2xl border border-slate-700/50 w-full max-w-md mx-auto relative">
-        {/* Close Button */}
+    <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-6">
+      <div className="absolute inset-0 bg-navy-950/60" aria-hidden="true" onClick={onClose} />
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        onKeyDown={trapFocus}
+        className="relative max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-t-2xl bg-white text-ink shadow-2xl outline-none sm:max-w-md sm:rounded-2xl"
+      >
         <button
+          type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 text-white/70 hover:text-white text-2xl font-light transition-colors duration-200 hover:rotate-90 transform z-10"
+          aria-label="Close"
+          className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full text-muted transition-colors hover:bg-paper hover:text-navy-900"
         >
-          ×
+          <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+            <path strokeLinecap="round" d="M5 5l10 10M15 5L5 15" />
+          </svg>
         </button>
 
-        <div className="p-6">
-          {!isSuccess ? (
-            <>
-              {/* Header */}
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full mx-auto flex items-center justify-center mb-4">
-                  <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                  </svg>
-                </div>
-                <h2 className="text-white text-2xl font-bold mb-2">
-                  Wait! Don&apos;t Miss Out
-                </h2>
-                <p className="text-blue-100 text-sm">
-                  Get your free savings analysis before you go
-                </p>
-              </div>
+        {!isSuccess ? (
+          <div className="px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-7 sm:px-8 sm:pb-8 sm:pt-8">
+            <h2 id={titleId} className="pr-10 font-wide text-2xl font-extrabold text-navy-900">
+              Get your free savings analysis before you go
+            </h2>
+            <p className="mt-2 text-muted">See how much you can save in processing fees.</p>
 
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Business Name *"
-                  value={formData.businessName}
-                  onChange={(e) => handleInputChange('businessName', e.target.value)}
-                  className="w-full p-3 rounded-lg bg-white/95 text-black text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 border border-gray-200"
-                  required
-                />
-                
-                <input
-                  type="text"
-                  placeholder="Your Name *"
-                  value={formData.firstName}
-                  onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  className="w-full p-3 rounded-lg bg-white/95 text-black text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 border border-gray-200"
-                  required
-                />
-                
-                <input
-                  type="email"
-                  placeholder="Email Address *"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="w-full p-3 rounded-lg bg-white/95 text-black text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 border border-gray-200"
-                  required
-                />
-                
+            <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
+              {field('businessName', 'Business name', 'text', 'organization')}
+              {field('firstName', 'Your name', 'text', 'name')}
+              {field('email', 'Email', 'email', 'email')}
+
+              <div>
+                <label htmlFor={fieldId('processingVolume')} className="block text-sm font-semibold text-ink">
+                  Monthly processing volume
+                </label>
                 <select
+                  id={fieldId('processingVolume')}
+                  name="processingVolume"
                   value={formData.processingVolume}
                   onChange={(e) => handleInputChange('processingVolume', e.target.value)}
-                  className="w-full p-3 rounded-lg bg-white/95 text-black text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/50 border border-gray-200"
+                  className={inputClasses(false)}
                 >
-                  <option value="< $5k">Less than $5k/month</option>
-                  <option value="$5k - $25k">$5k - $25k/month</option>
-                  <option value="$25k - $50k">$25k - $50k/month</option>
-                  <option value="$50k - $100k">$50k - $100k/month</option>
-                  <option value="$100k - $200k">$100k - $200k/month</option>
-                  <option value="$200k+">$200k+/month</option>
+                  {volumeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !formData.businessName.trim() || !formData.firstName.trim() || !formData.email.trim()}
-                  className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 disabled:from-gray-400 disabled:to-gray-500 text-black font-bold py-3 rounded-lg text-sm transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? 'SUBMITTING...' : 'GET MY FREE ANALYSIS'}
-                </button>
-              </form>
-
-              <p className="text-xs text-gray-400 text-center mt-3">
-                💰 See how much you can save in processing fees
-              </p>
-            </>
-          ) : (
-            /* Success State */
-            <div className="text-center py-4">
-              <div className="w-16 h-16 bg-green-500 rounded-full mx-auto flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"></path>
-                </svg>
               </div>
-              <h2 className="text-white text-xl font-bold mb-2">
-                Thank You!
-              </h2>
-              <p className="text-blue-100 text-sm">
-                We&apos;ll contact you within 24 hours with your savings analysis.
-              </p>
-            </div>
-          )}
-        </div>
+
+              {submitError && (
+                <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                  We couldn&apos;t send your details. Please try again, or call us at{' '}
+                  <a href={PHONE_HREF} className="font-semibold underline underline-offset-2">
+                    {PHONE_DISPLAY}
+                  </a>
+                  .
+                </p>
+              )}
+
+              <div className="pt-2">
+                <button type="submit" disabled={isSubmitting} className={buttonClasses('primary', 'md')}>
+                  {isSubmitting ? 'Sending…' : 'Get my free analysis'}
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : (
+          <div role="status" className="px-6 pb-8 pt-8 sm:px-8">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-navy-900 text-gold-400">
+              <CheckIcon />
+            </span>
+            <h2 id={titleId} className="mt-5 font-wide text-2xl font-extrabold text-navy-900">
+              Thank you
+            </h2>
+            <p className="mt-2 text-muted">We&apos;ll contact you within 24 hours with your savings analysis.</p>
+          </div>
+        )}
       </div>
     </div>
   );

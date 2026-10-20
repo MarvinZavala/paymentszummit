@@ -1,414 +1,299 @@
-'use client';
-
 import Link from 'next/link';
-import { useState } from 'react';
-import Header from '@/components/Header';
 import FloatingLeadCapture from '@/components/FloatingLeadCapture';
 import { CalendlyButton } from '@/components/CalendlyWidget';
+import { ArrowIcon, ButtonLink, CheckIcon } from '@/components/ui/Button';
+import { PageHero, Section, SectionHeading } from '@/components/ui/Layout';
+import OnboardingTimeline from '@/components/sections/OnboardingTimeline';
+
+const cards = ['Visa', 'Mastercard', 'American Express', 'Discover', 'JCB', 'Diners Club'];
+const wallets = ['Apple Pay', 'Google Pay', 'Samsung Pay'];
+
+// How the rates work. This used to be the "Competitive Rates" tab; it belongs with the pricing.
+const pricing = [
+  {
+    name: 'Interchange plus pricing',
+    description: 'Transparent pricing built on wholesale interchange rates.',
+  },
+  {
+    name: 'Volume discounts',
+    description: 'Your rates go down as your processing volume goes up, so your costs shrink as you grow.',
+  },
+  {
+    name: 'No hidden fees',
+    description: 'No surprise charges, so your monthly processing costs are predictable.',
+  },
+  {
+    name: 'Rate optimization',
+    description: 'We review your rates regularly so you keep getting the best rates.',
+  },
+];
+
+const included = [
+  'Free terminal and equipment',
+  'Next-day funding',
+  '24/7 customer support',
+  'Real-time reporting',
+  'PCI compliance assistance',
+  'Mobile processing',
+  'Fraud protection',
+  'Chargeback protection',
+];
+
+// The three remaining feature tabs, shown all at once so the page can be scanned (and read by search engines).
+const featureGroups = [
+  {
+    title: 'Security',
+    lead: 'Bank-level security with end-to-end encryption.',
+    items: [
+      {
+        name: 'PCI DSS compliance',
+        description: 'Fully compliant with the Payment Card Industry Data Security Standard, to help protect you from data breaches.',
+      },
+      {
+        name: 'End-to-end encryption',
+        description: 'Every transaction is encrypted from card swipe to settlement, so sensitive data stays secure.',
+      },
+      {
+        name: 'Tokenization',
+        description: 'Card data is replaced with secure tokens, which reduces your PCI compliance scope.',
+      },
+      {
+        name: 'Fraud detection',
+        description: 'AI-powered fraud prevention and risk management to keep chargebacks and losses down.',
+      },
+    ],
+  },
+  {
+    title: 'Fast processing',
+    lead: 'Quick approvals at checkout and quick access to your money.',
+    items: [
+      {
+        name: 'Real-time authorization',
+        description: 'Transactions are approved in under 2 seconds, for a faster checkout.',
+      },
+      {
+        name: 'Next-day funding',
+        description: 'Your funds arrive the next business day, which makes cash flow easier to manage.',
+      },
+      {
+        name: 'Same-day settlement',
+        description: 'Available for qualifying merchants who need their funds sooner.',
+      },
+      {
+        name: 'Batch processing',
+        description: 'Handles high-volume transactions efficiently, so busy periods run smoothly.',
+      },
+    ],
+  },
+  {
+    title: '24/7 support',
+    lead: 'Round-the-clock help from payment processing experts.',
+    items: [
+      {
+        name: 'Dedicated account manager',
+        description: 'A personal point of contact who knows your business.',
+      },
+      {
+        name: 'Technical support',
+        description: 'Help with any issue, 24/7, to keep downtime and disruptions to a minimum.',
+      },
+      {
+        name: 'Training and onboarding',
+        description: 'Training for you and your staff, so you are up and running quickly.',
+      },
+      {
+        name: 'Dispute resolution',
+        description: 'Expert help with chargebacks and disputes, to protect your revenue and reputation.',
+      },
+    ],
+  },
+];
+
+const businessTypes = [
+  {
+    title: 'Retail stores',
+    description: 'For brick-and-mortar businesses.',
+    features: ['In-person payments', 'POS integration', 'Inventory management'],
+  },
+  {
+    title: 'Restaurants',
+    description: 'Built for food service.',
+    features: ['Table-side payments', 'Tip management', 'Kitchen integration'],
+  },
+  {
+    title: 'E-commerce',
+    description: 'Online payment processing.',
+    features: ['Shopping cart integration', 'Recurring billing', 'Mobile optimization'],
+  },
+  {
+    title: 'Service businesses',
+    description: 'Flexible ways to get paid for your services.',
+    features: ['Mobile payments', 'Invoicing', 'Appointment booking'],
+  },
+];
+
+function AcceptedList({ label, items }: { label: string; items: string[] }) {
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
+      <p className="shrink-0 text-sm text-navy-300 sm:w-28">{label}</p>
+      <ul aria-label={label} className="flex flex-wrap gap-2">
+        {items.map((item) => (
+          <li
+            key={item}
+            className="rounded-md border border-white/15 px-3 py-1.5 text-[0.95rem] font-medium text-white"
+          >
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export default function CreditCardProcessing() {
-  const [activeFeature, setActiveFeature] = useState('security');
-
-  const processingFeatures = [
-    {
-      id: 'security',
-      name: 'Advanced Security',
-      icon: '🛡️',
-      description: 'Bank-level security with end-to-end encryption'
-    },
-    {
-      id: 'speed',
-      name: 'Fast Processing',
-      icon: '⚡',
-      description: 'Lightning-fast transaction processing'
-    },
-    {
-      id: 'rates',
-      name: 'Competitive Rates',
-      icon: '💰',
-      description: 'Industry-leading processing rates'
-    },
-    {
-      id: 'support',
-      name: '24/7 Support',
-      icon: '🆘',
-      description: 'Round-the-clock expert support'
-    }
-  ];
-
-  const featureDetails = {
-    security: {
-      title: 'Advanced Security Features',
-      features: [
-        {
-          name: 'PCI DSS Compliance',
-          description: 'Fully compliant with Payment Card Industry Data Security Standards',
-          benefit: 'Protect your business from data breaches'
-        },
-        {
-          name: 'End-to-End Encryption',
-          description: 'All transactions are encrypted from card swipe to settlement',
-          benefit: 'Maximum security for sensitive data'
-        },
-        {
-          name: 'Tokenization',
-          description: 'Replace sensitive card data with secure tokens',
-          benefit: 'Reduce PCI compliance scope'
-        },
-        {
-          name: 'Fraud Detection',
-          description: 'AI-powered fraud prevention and risk management',
-          benefit: 'Minimize chargebacks and losses'
-        }
-      ]
-    },
-    speed: {
-      title: 'Lightning-Fast Processing',
-      features: [
-        {
-          name: 'Real-Time Authorization',
-          description: 'Instant transaction approval in under 2 seconds',
-          benefit: 'Faster checkout experience'
-        },
-        {
-          name: 'Next-Day Funding',
-          description: 'Receive your funds the next business day',
-          benefit: 'Improved cash flow management'
-        },
-        {
-          name: 'Same-Day Settlement',
-          description: 'Available for qualifying merchants',
-          benefit: 'Access to funds when you need them'
-        },
-        {
-          name: 'Batch Processing',
-          description: 'Efficient handling of high-volume transactions',
-          benefit: 'Seamless operations during peak times'
-        }
-      ]
-    },
-    rates: {
-      title: 'Competitive Processing Rates',
-      features: [
-        {
-          name: 'Interchange Plus Pricing',
-          description: 'Transparent pricing with wholesale interchange rates',
-          benefit: 'Save up to 40% on processing fees'
-        },
-        {
-          name: 'Volume Discounts',
-          description: 'Lower rates as your processing volume increases',
-          benefit: 'Grow your business, reduce your costs'
-        },
-        {
-          name: 'No Hidden Fees',
-          description: 'Transparent pricing with no surprise charges',
-          benefit: 'Predictable monthly processing costs'
-        },
-        {
-          name: 'Rate Optimization',
-          description: 'Regular reviews to ensure you get the best rates',
-          benefit: 'Continuous savings on processing'
-        }
-      ]
-    },
-    support: {
-      title: '24/7 Expert Support',
-      features: [
-        {
-          name: 'Dedicated Account Manager',
-          description: 'Personal point of contact who knows your business',
-          benefit: 'Personalized service and support'
-        },
-        {
-          name: 'Technical Support',
-          description: '24/7 technical assistance for any issues',
-          benefit: 'Minimize downtime and disruptions'
-        },
-        {
-          name: 'Training & Onboarding',
-          description: 'Comprehensive training for you and your staff',
-          benefit: 'Get up and running quickly'
-        },
-        {
-          name: 'Dispute Resolution',
-          description: 'Expert assistance with chargebacks and disputes',
-          benefit: 'Protect your revenue and reputation'
-        }
-      ]
-    }
-  };
-
-  const cardTypes = [
-    { name: 'Visa', logo: '💳', accepted: true },
-    { name: 'Mastercard', logo: '💳', accepted: true },
-    { name: 'American Express', logo: '💳', accepted: true },
-    { name: 'Discover', logo: '💳', accepted: true },
-    { name: 'JCB', logo: '💳', accepted: true },
-    { name: 'Diners Club', logo: '💳', accepted: true }
-  ];
-
-  const businessTypes = [
-    {
-      type: 'Retail Stores',
-      description: 'Perfect for brick-and-mortar businesses',
-      features: ['In-person payments', 'POS integration', 'Inventory management']
-    },
-    {
-      type: 'Restaurants',
-      description: 'Specialized solutions for food service',
-      features: ['Table-side payments', 'Tip management', 'Kitchen integration']
-    },
-    {
-      type: 'E-commerce',
-      description: 'Online payment processing solutions',
-      features: ['Shopping cart integration', 'Recurring billing', 'Mobile optimization']
-    },
-    {
-      type: 'Service Businesses',
-      description: 'Flexible payment options for services',
-      features: ['Mobile payments', 'Invoicing', 'Appointment booking']
-    }
-  ];
-
-  const currentFeature = featureDetails[activeFeature as keyof typeof featureDetails];
-
   return (
-    <div className="min-h-screen">
-      <Header />
+    <>
       <FloatingLeadCapture pageName="credit-card-processing" />
-      
-      <section className="relative py-20 pt-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-dark via-primary-blue to-luxury-purple opacity-90"></div>
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full mix-blend-multiply filter blur-xl animate-breathe"></div>
-          <div className="absolute top-40 right-10 w-72 h-72 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-xl animate-breathe-delay"></div>
+
+      <PageHero
+        title="Credit card processing for small business"
+        lead="Accept all major credit cards with secure, fast and reliable processing, and keep more of every sale. Fees start at 0% for qualifying merchants."
+        actions={
+          <>
+            <CalendlyButton text="Schedule a free call" size="lg" />
+            <ButtonLink href="/get-quote" variant="outline-light" size="lg">
+              Get a free quote
+            </ButtonLink>
+            <p className="mt-2 basis-full text-sm text-navy-300">Free 30-minute consultation. No commitment required.</p>
+          </>
+        }
+      >
+        <div className="mt-14 space-y-4 border-t border-white/10 pt-8 sm:mt-16">
+          <AcceptedList label="Credit cards" items={cards} />
+          <AcceptedList label="Digital wallets" items={wallets} />
         </div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-            Credit Card
-            <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-              Processing
-            </span>
-          </h1>
-          <p className="text-xl text-neutral-200 mb-12 max-w-3xl mx-auto">
-            Accept all major credit cards with our secure, fast, and reliable payment processing system. Start saving on processing fees today.
-          </p>
-          
+      </PageHero>
 
-          {/* Accepted Cards */}
-          <div className="glass rounded-2xl p-8 max-w-4xl mx-auto">
-            <h3 className="text-2xl font-bold text-white mb-6">We Accept All Major Cards</h3>
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-              {cardTypes.map((card) => (
-                <div key={card.name} className="text-center">
-                  <div className="text-4xl mb-2">{card.logo}</div>
-                  <div className="text-white text-sm font-semibold">{card.name}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Key Features */}
-      <section className="py-20 bg-gradient-to-b from-neutral-900 to-black">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-6">Why Choose Our Processing?</h2>
-            <p className="text-xl text-neutral-400 max-w-3xl mx-auto">
-              Industry-leading features designed to help your business succeed
-            </p>
-          </div>
-
-          {/* Feature Tabs */}
-          <div className="flex flex-wrap justify-center mb-12 gap-4">
-            {processingFeatures.map((feature) => (
-              <button
-                key={feature.id}
-                onClick={() => setActiveFeature(feature.id)}
-                className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 flex items-center space-x-2 ${
-                  activeFeature === feature.id
-                    ? 'bg-yellow-400 text-black'
-                    : 'bg-white/10 text-white hover:bg-white/20'
-                }`}
-              >
-                <span>{feature.icon}</span>
-                <span>{feature.name}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Feature Details */}
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h3 className="text-3xl font-bold text-white mb-4">{currentFeature.title}</h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {currentFeature.features.map((feature, index) => (
-                <div key={index} className="glass rounded-2xl p-8">
-                  <h4 className="text-xl font-bold text-white mb-4">{feature.name}</h4>
-                  <p className="text-neutral-300 mb-4 leading-relaxed">{feature.description}</p>
-                  <div className="flex items-center text-yellow-400">
-                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                    </svg>
-                    <span className="font-semibold">{feature.benefit}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Business Types */}
-      <section className="py-20 bg-neutral-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-6">Perfect for Every Business</h2>
-            <p className="text-xl text-neutral-400 max-w-3xl mx-auto">
-              Tailored solutions for different business types and industries
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {businessTypes.map((business, index) => (
-              <div key={index} className="glass rounded-2xl p-8 text-center hover:bg-white/10 transition-all duration-300 hover:scale-105">
-                <h3 className="text-xl font-bold text-white mb-4">{business.type}</h3>
-                <p className="text-neutral-400 mb-6">{business.description}</p>
-                <ul className="space-y-2">
-                  {business.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-center text-neutral-300 text-sm">
-                      <svg className="w-4 h-4 mr-2 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                      </svg>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Benefits */}
-      <section className="py-20 bg-gradient-to-b from-black to-neutral-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-6">Transparent Pricing</h2>
-            <p className="text-xl text-neutral-400 max-w-3xl mx-auto">
-              No hidden fees, no surprises. Just honest, competitive rates.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            <div className="glass rounded-2xl p-8 text-center">
-              <div className="text-4xl font-bold text-yellow-400 mb-2">0%</div>
-              <div className="text-white font-semibold mb-2">Starting Rate</div>
-              <div className="text-neutral-400 text-sm">For qualifying merchants with high volume</div>
-            </div>
-            <div className="glass rounded-2xl p-8 text-center">
-              <div className="text-4xl font-bold text-yellow-400 mb-2">24hrs</div>
-              <div className="text-white font-semibold mb-2">Setup Time</div>
-              <div className="text-neutral-400 text-sm">Get approved and start processing quickly</div>
-            </div>
-            <div className="glass rounded-2xl p-8 text-center">
-              <div className="text-4xl font-bold text-yellow-400 mb-2">100%</div>
-              <div className="text-white font-semibold mb-2">Average Savings</div>
-              <div className="text-neutral-400 text-sm">Compared to traditional processors</div>
-            </div>
-          </div>
-
-          <div className="text-center">
-            <div className="glass rounded-2xl p-8 max-w-4xl mx-auto">
-              <h3 className="text-2xl font-bold text-white mb-6">What&apos;s Included</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                <div className="space-y-3">
-                  <div className="flex items-center text-neutral-300">
-                    <svg className="w-5 h-5 mr-3 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                    </svg>
-                    Free terminal and equipment
-                  </div>
-                  <div className="flex items-center text-neutral-300">
-                    <svg className="w-5 h-5 mr-3 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                    </svg>
-                    24/7 customer support
-                  </div>
-                  <div className="flex items-center text-neutral-300">
-                    <svg className="w-5 h-5 mr-3 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                    </svg>
-                    PCI compliance assistance
-                  </div>
-                  <div className="flex items-center text-neutral-300">
-                    <svg className="w-5 h-5 mr-3 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                    </svg>
-                    Fraud protection
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center text-neutral-300">
-                    <svg className="w-5 h-5 mr-3 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                    </svg>
-                    Next-day funding
-                  </div>
-                  <div className="flex items-center text-neutral-300">
-                    <svg className="w-5 h-5 mr-3 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                    </svg>
-                    Real-time reporting
-                  </div>
-                  <div className="flex items-center text-neutral-300">
-                    <svg className="w-5 h-5 mr-3 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                    </svg>
-                    Mobile processing
-                  </div>
-                  <div className="flex items-center text-neutral-300">
-                    <svg className="w-5 h-5 mr-3 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                    </svg>
-                    Chargeback protection
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-yellow-400 to-orange-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold text-black mb-6">
-            Ready to Start Processing?
-          </h2>
-          <p className="text-xl text-black/80 mb-12 max-w-3xl mx-auto">
-            Get approved in minutes and start accepting credit cards today. No setup fees, no long-term contracts.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <CalendlyButton 
-              text="Get Started Now"
-              className="bg-black hover:bg-neutral-800 text-white px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all duration-300 hover:scale-105"
+      {/* The bold moment of the page: what it costs */}
+      <Section tone="white" aria-labelledby="pricing-title">
+        <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20">
+          <div>
+            <SectionHeading
+              id="pricing-title"
+              title="Transparent pricing"
+              intro="No hidden fees and no surprises. Just honest, competitive rates."
             />
-            <Link
-              href="/portfolio"
-              className="bg-white/20 hover:bg-white/30 text-black border-2 border-black/20 px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 hover:scale-105"
-            >
-              View Equipment
-            </Link>
+            <p className="mt-10">
+              <span className="relative inline-block font-extra-wide text-[8.5rem] font-extrabold leading-[0.9] text-navy-900 sm:text-[12.5rem]">
+                <span aria-hidden="true" className="absolute inset-x-0 bottom-[0.06em] h-[0.3em] rounded-[3px] bg-gold-400" />
+                <span className="relative">0%</span>
+              </span>
+              <span className="mt-6 block text-xl font-bold text-navy-900">
+                Starting rate for qualifying merchants with high volume
+              </span>
+              <span className="mt-2 block max-w-prose text-lg text-muted">
+                If you don&apos;t qualify for 0%, you still get competitive rates tailored to your business volume and industry.
+              </span>
+            </p>
           </div>
+
+          <dl className="divide-y divide-line self-end border-y border-line">
+            {pricing.map((item) => (
+              <div key={item.name} className="py-6">
+                <dt className="text-lg font-bold text-navy-900">{item.name}</dt>
+                <dd className="mt-1 text-muted">{item.description}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
-      </section>
-    </div>
+
+        <div className="mt-16 rounded-2xl border border-line bg-paper p-7 sm:p-10">
+          <h3 className="font-wide text-2xl font-extrabold text-navy-900">What&apos;s included</h3>
+          <p className="mt-2 text-muted">No setup fees. No long-term contracts for most merchants.</p>
+          <ul className="mt-8 grid gap-x-8 gap-y-3.5 sm:grid-cols-2 lg:grid-cols-4">
+            {included.map((item) => (
+              <li key={item} className="flex gap-3">
+                <CheckIcon className="mt-0.5 text-navy-700" />
+                {item}
+              </li>
+            ))}
+          </ul>
+          <Link
+            href="/portfolio"
+            className="mt-8 inline-flex items-center gap-2 font-semibold text-navy-700 hover:text-navy-900"
+          >
+            See the equipment
+            <ArrowIcon />
+          </Link>
+        </div>
+      </Section>
+
+      {/* Former tabs, laid out as a spec sheet: one row per topic */}
+      <Section tone="paper" aria-labelledby="features-title">
+        <SectionHeading
+          id="features-title"
+          title="Why business owners choose our processing"
+          intro="Security, speed and support that help your business run smoothly."
+        />
+        <div className="mt-14 divide-y divide-line border-y border-line">
+          {featureGroups.map((group) => (
+            <div
+              key={group.title}
+              className="grid gap-6 py-10 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,2fr)] lg:gap-16"
+            >
+              <div>
+                <h3 className="font-wide text-2xl font-extrabold text-navy-900">{group.title}</h3>
+                <p className="mt-2 text-muted">{group.lead}</p>
+              </div>
+              <dl className="grid gap-x-12 gap-y-7 sm:grid-cols-2">
+                {group.items.map((item) => (
+                  <div key={item.name}>
+                    <dt className="font-bold text-navy-900">{item.name}</dt>
+                    <dd className="mt-1 text-[0.95rem] text-muted">{item.description}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      {/* Who it's for, kept short: the home page covers this in more depth */}
+      <Section tone="white" aria-labelledby="business-title">
+        <SectionHeading
+          id="business-title"
+          title="Right for every kind of business"
+          intro="Solutions tailored to your business type and industry."
+        />
+        <ul className="mt-12 divide-y divide-line border-y border-line">
+          {businessTypes.map((business) => (
+            <li key={business.title} className="grid gap-3 py-6 md:grid-cols-[16rem_minmax(0,1fr)] md:items-baseline md:gap-10">
+              <div>
+                <h3 className="text-lg font-bold text-navy-900">{business.title}</h3>
+                <p className="text-[0.95rem] text-muted">{business.description}</p>
+              </div>
+              <ul className="flex flex-wrap gap-x-7 gap-y-2">
+                {business.features.map((feature) => (
+                  <li key={feature} className="flex gap-2 text-[0.95rem]">
+                    <CheckIcon className="mt-0.5 h-4 w-4 text-navy-700" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      </Section>
+
+      {/* Replaces the old "24hrs setup" and "approved in minutes" claims with the real sequence */}
+      <Section tone="paper" aria-labelledby="onboarding-title">
+        <SectionHeading
+          id="onboarding-title"
+          title="Start taking payments in 5 days"
+          intro="Here is what happens between saying yes and taking your first card payment."
+        />
+        <OnboardingTimeline className="mt-14" />
+      </Section>
+    </>
   );
 }

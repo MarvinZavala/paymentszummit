@@ -1,124 +1,129 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { CalendlyButton } from './CalendlyWidget';
 import GoogleTranslate from './GoogleTranslate';
+import { ButtonLink } from './ui/Button';
+import { cn } from '@/lib/utils';
+
+const navigation = [
+  { name: 'Payment Solutions', href: '/products' },
+  { name: 'Equipment', href: '/portfolio' },
+  { name: 'Company', href: '/company' },
+  { name: 'Support', href: '/support' },
+  { name: 'Contact', href: '/contact' },
+];
 
 export default function Header() {
+  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  const navigation = [
-    { name: 'Payment Solutions', href: '/products' },
-    { name: 'Equipment', href: '/portfolio' },
-    { name: 'Company', href: '/company' },
-    { name: 'Contact', href: '/contact' }
-  ];
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => setIsMenuOpen(false), [pathname]);
+
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-white/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
-          
-          <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity duration-300">
-            <Image 
-              src="/zummit.png" 
-              alt="Zummit Payments Logo" 
-              width={72}
-              height={72}
-              className="object-contain"
-            />
-            <div>
-              <span className="block text-2xl font-bold text-white">Zummit Payments</span>
-              <p className="text-xs text-neutral-300 leading-none">Merchant & Payment Processing Services</p>
-            </div>
-          </Link>
+    <header
+      className={cn(
+        'fixed inset-x-0 top-0 z-50 text-white transition-colors duration-200',
+        scrolled || isMenuOpen ? 'border-b border-white/10 bg-navy-900/95 backdrop-blur' : 'bg-transparent'
+      )}
+    >
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
+        <Link href="/" className="flex items-center gap-3" aria-label="Zummit Payments home">
+          <Image src="/zummit.png" alt="" width={48} height={48} className="h-12 w-12 object-contain" priority />
+          <span className="leading-tight">
+            <span className="block font-wide text-lg font-bold">Zummit Payments</span>
+            <span className="hidden text-xs text-navy-300 sm:block">Merchant & Payment Processing Services</span>
+          </span>
+        </Link>
 
-          <nav className="hidden lg:flex space-x-8">
+        <nav aria-label="Main" className="hidden xl:block">
+          <ul className="flex items-center gap-7">
             {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="text-neutral-200 hover:text-white font-medium text-sm transition-all duration-300 hover:scale-105 relative group"
-              >
-                {item.name}
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 group-hover:w-full transition-all duration-300"></span>
-              </Link>
-            ))}
-          </nav>
-
-          <div className="hidden lg:flex items-center space-x-4">
-            <GoogleTranslate />
-            <a
-              href="mailto:Save.zummitpayments@gmail.com"
-              className="text-yellow-400 hover:text-yellow-300 font-semibold text-sm flex items-center space-x-2 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-              </svg>
-              <span>Email</span>
-            </a>
-            <CalendlyButton 
-              text="Schedule Call"
-              className="text-sm px-6 py-2.5 shadow-lg shadow-yellow-400/25 hover:shadow-yellow-400/40"
-            />
-          </div>
-
-          <button
-            className="lg:hidden p-2 text-white hover:text-yellow-400 transition-colors"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {isMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
-        </div>
-
-        {isMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-white/10">
-            <div className="flex flex-col space-y-4">
-              {navigation.map((item) => (
+              <li key={item.href}>
                 <Link
-                  key={item.name}
                   href={item.href}
-                  className="text-neutral-200 hover:text-white font-medium py-2 transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
+                  aria-current={isActive(item.href) ? 'page' : undefined}
+                  className={cn(
+                    'border-b-2 py-1 text-[0.95rem] font-medium transition-colors',
+                    isActive(item.href)
+                      ? 'border-gold-400 text-white'
+                      : 'border-transparent text-navy-200 hover:text-white'
+                  )}
                 >
                   {item.name}
                 </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="hidden items-center gap-3 xl:flex">
+          <GoogleTranslate />
+          <CalendlyButton text="Schedule a call" size="sm" />
+        </div>
+
+        <button
+          type="button"
+          className="-mr-2 rounded-lg p-2 text-white xl:hidden"
+          onClick={() => setIsMenuOpen((open) => !open)}
+          aria-expanded={isMenuOpen}
+          aria-controls="mobile-menu"
+          aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+        >
+          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            {isMenuOpen ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7h16M4 12h16M4 17h16" />
+            )}
+          </svg>
+        </button>
+      </div>
+
+      {isMenuOpen && (
+        <div id="mobile-menu" className="border-t border-white/10 bg-navy-900 xl:hidden">
+          <nav aria-label="Main" className="mx-auto max-w-7xl px-5 pb-8 pt-2 sm:px-8">
+            <ul className="divide-y divide-white/10">
+              {navigation.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    aria-current={isActive(item.href) ? 'page' : undefined}
+                    className={cn(
+                      'flex py-4 text-lg font-medium',
+                      isActive(item.href) ? 'text-gold-400' : 'text-white'
+                    )}
+                  >
+                    {item.name}
+                  </Link>
+                </li>
               ))}
-              <div className="pt-4 border-t border-white/10 flex flex-col space-y-3">
-                <div className="mb-2">
-                  <GoogleTranslate />
-                </div>
-                <a
-                  href="mailto:Save.zummitpayments@gmail.com"
-                  className="text-yellow-400 hover:text-yellow-300 font-semibold flex items-center space-x-2"
-                >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-                  </svg>
-                  <span>Email</span>
-                </a>
-                <Link
-                  href="/contact"
-                  className="btn-primary bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-6 py-3 rounded-full font-semibold text-center shadow-lg shadow-yellow-400/25"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Get Quote
-                </Link>
+            </ul>
+            <div className="mt-6 flex flex-col gap-3">
+              <CalendlyButton text="Schedule a free call" size="lg" />
+              <ButtonLink href="/get-quote" variant="outline-light" size="lg">
+                Get a free quote
+              </ButtonLink>
+              <div className="pt-2">
+                <GoogleTranslate />
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

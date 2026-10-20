@@ -16,13 +16,11 @@ export default function ProductsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <>
       <JsonLd data={breadcrumbJsonLd([{ name: 'Payment Solutions', path: '/products' }])} />
       <Header />
-      <main className="flex-1 pt-20">
-        {children}
-      </main>
+      <main id="main">{children}</main>
       <Footer />
-    </div>
+    </>
   );
 }

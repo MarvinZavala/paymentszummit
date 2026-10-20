@@ -16,12 +16,11 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <>
       <Header />
-      <main className="flex-1 pt-20">
-        {children}
-      </main>
-      <Footer />
-    </div>
+      <main id="main">{children}</main>
+      {/* The page ends with its own booking section, so the footer's call to action would repeat it. */}
+      <Footer showCta={false} />
+    </>
   );
 }

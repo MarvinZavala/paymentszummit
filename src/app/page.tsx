@@ -1,250 +1,283 @@
-'use client';
-
+import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { CalendlyEmbed } from '@/components/CalendlyWidget';
-import ExitIntentPopup from '@/components/ExitIntentPopup';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import Receipt from '@/components/home/Receipt';
+import CalendlyWidget, { CalendlyButton } from '@/components/CalendlyWidget';
 import { FlipWords } from '@/components/ui/flip-words';
+import { ArrowIcon, ButtonLink, CheckIcon } from '@/components/ui/Button';
+import { Container, Section, SectionHeading } from '@/components/ui/Layout';
+import OnboardingTimeline from '@/components/sections/OnboardingTimeline';
+import CustomerStories from '@/components/sections/CustomerStories';
+import FaqList from '@/components/sections/FaqList';
+import { faqData } from '@/lib/faq';
+import { CONTACT_EMAIL, PHONE_DISPLAY, PHONE_HREF } from '@/lib/site';
+
+const valueWords = ['Simple', 'Secure', 'Faster', 'Smarter', 'Cheaper', 'Better'];
+
+const stats = [
+  { value: '90%', label: 'Average savings' },
+  { value: '$100K+', label: 'Monthly processing' },
+  { value: '10,000+', label: 'Happy customers' },
+  { value: '99.9%', label: 'System uptime' },
+];
+
+const services = [
+  {
+    title: 'Credit card processing',
+    description: 'Accept all major credit cards with a secure, fast processing system.',
+    href: '/credit-card-processing',
+  },
+  {
+    title: 'Point of sale systems',
+    description: 'Modern POS solutions for retail, restaurants and service businesses.',
+    href: '/portfolio',
+  },
+  {
+    title: 'E-commerce integration',
+    description: 'Online payment processing for your website or app.',
+    href: '/products#ecommerce',
+  },
+  {
+    title: 'Secure transactions',
+    description: 'Bank-level security with PCI DSS compliance and fraud protection.',
+    href: '/credit-card-processing',
+  },
+  {
+    title: '24/7 support',
+    description: 'Round-the-clock customer support from payment processing experts.',
+    href: '/support',
+  },
+  {
+    title: 'Account management',
+    description: 'A dedicated account manager who helps you optimize your payment processing.',
+    href: '/support/account',
+  },
+];
+
+const industries = [
+  {
+    title: 'Retail stores',
+    description: 'Brick-and-mortar shops.',
+    features: ['In-person payments', 'POS integration', 'Inventory management'],
+  },
+  {
+    title: 'Restaurants',
+    description: 'Built for food service.',
+    features: ['Table-side payments', 'Tip management', 'Kitchen integration'],
+  },
+  {
+    title: 'E-commerce',
+    description: 'Online payment processing.',
+    features: ['Shopping cart integration', 'Recurring billing', 'Mobile optimization'],
+  },
+  {
+    title: 'Service businesses',
+    description: 'Get paid for your services.',
+    features: ['Mobile payments', 'Invoicing', 'Appointment booking'],
+  },
+];
+
+// The questions a business owner asks before booking a call.
+const homeFaqs = [
+  faqData.general[2], // processing fees
+  faqData.billing[1], // hidden fees
+  faqData.general[1], // how quickly can I start
+  faqData.billing[0], // when do I receive my funds
+  faqData.general[3], // equipment
+];
 
 export default function Home() {
-  const [stats] = useState({
-    savings: '90%',
-    processing: '$100K+',
-    customers: '10,000+',
-    uptime: '99.9%'
-  });
-
-  const valueWords = ["Simple", "Secure", "Faster", "Smarter", "Cheaper", "Better"];
-
-  const [showExitPopup, setShowExitPopup] = useState(false);
-
-  const features = [
-    {
-      icon: (
-        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"/>
-        </svg>
-      ),
-      title: 'Credit Card Processing',
-      description: 'Accept all major credit cards with our secure, fast processing system.',
-      link: '/credit-card-processing'
-    },
-    {
-      icon: (
-        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
-        </svg>
-      ),
-      title: 'Point of Sale Systems',
-      description: 'Modern POS solutions for retail, restaurants, and service businesses.',
-      link: '/portfolio'
-    },
-    {
-      icon: (
-        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-      ),
-      title: 'Secure Transactions',
-      description: 'Bank-level security with PCI DSS compliance and fraud protection.',
-      link: '/contact'
-    },
-    {
-      icon: (
-        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-        </svg>
-      ),
-      title: 'E-commerce Integration',
-      description: 'Seamless online payment processing for your website or app.',
-      link: '/products'
-    },
-    {
-      icon: (
-        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-        </svg>
-      ),
-      title: '24/7 Support',
-      description: 'Round-the-clock customer support from payment processing experts.',
-      link: '/support'
-    },
-    {
-      icon: (
-        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
-        </svg>
-      ),
-      title: 'Account Management',
-      description: 'Dedicated account manager to help optimize your payment processing.',
-      link: '/support/account'
-    }
-  ];
-
-  // Exit intent detection
-  useEffect(() => {
-    let exitIntentTriggered = false;
-
-    const handleMouseLeave = (e: MouseEvent) => {
-      if (e.clientY <= 0 && !exitIntentTriggered) {
-        exitIntentTriggered = true;
-        setShowExitPopup(true);
-      }
-    };
-
-    // Add event listener after a delay to avoid immediate triggers
-    const timer = setTimeout(() => {
-      document.addEventListener('mouseleave', handleMouseLeave);
-    }, 10000); // 10 seconds delay
-
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener('mouseleave', handleMouseLeave);
-    };
-  }, []);
-
   return (
-    <div className="min-h-screen">
+    <>
       <Header />
-      
-      <section className="relative py-20 pt-32 lg:min-h-screen lg:flex lg:items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-dark via-primary-blue to-luxury-purple opacity-90"></div>
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full mix-blend-multiply filter blur-xl animate-breathe"></div>
-          <div className="absolute top-40 right-10 w-72 h-72 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-xl animate-breathe-delay"></div>
-          <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-orange-500/20 rounded-full mix-blend-multiply filter blur-xl animate-breathe-delay-long"></div>
-        </div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center w-full">
-          <div>
-            <div className="space-y-4">
-              <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 bg-clip-text text-transparent">
-                Zummit Payments
+
+      <main>
+        {/* Hero: the promise on the left, the receipt that proves it on the right */}
+        <section className="relative overflow-hidden bg-navy-900 text-white">
+          <Container className="grid gap-12 pb-14 pt-32 sm:pt-36 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:gap-8 lg:pb-16 lg:pt-36">
+            <div className="lg:pt-6">
+              <h1 className="font-extra-wide text-[2.9rem] font-extrabold leading-[0.98] sm:text-7xl xl:text-[5.25rem]">
+                <span className="block">Payments made</span>
+                <span className="sr-only">simple</span>
+                <FlipWords words={valueWords} duration={3000} align="start" className="text-gold-400" />
               </h1>
-              <h2 className="text-3xl md:text-4xl font-semibold text-neutral-200">
-                Payments made{" "}
-                <span 
-                  className="inline-block bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 bg-clip-text text-transparent"
-                  translate="no"
-                  data-notranslate=""
-                >
-                  <FlipWords 
-                    words={valueWords} 
-                    duration={3000}
-                    className="text-yellow-400 font-bold"
-                  />
-                </span>
-              </h2>
+              <p className="mt-8 max-w-[34rem] text-xl leading-relaxed text-navy-200">
+                From zero processing fees to low, transparent rates tailored to your volume and industry. Zummit Payments
+                helps business owners keep more of every sale.
+              </p>
+              <div className="mt-10 flex flex-wrap gap-3">
+                <CalendlyButton text="Schedule a free call" size="lg" />
+                <ButtonLink href="/get-quote" variant="outline-light" size="lg">
+                  Get a free quote
+                </ButtonLink>
+              </div>
+              <p className="mt-5 text-sm text-navy-300">Free 30-minute consultation. No commitment required.</p>
             </div>
+
+            <Receipt />
+          </Container>
+
+          <div className="border-t border-white/10">
+            <Container>
+              <dl className="grid grid-cols-2 lg:grid-cols-4">
+                {stats.map((stat, i) => (
+                  <div
+                    key={stat.label}
+                    className={`flex flex-col-reverse gap-1 py-7 ${i % 2 === 1 ? 'border-l border-white/10 pl-6' : ''} ${
+                      i > 1 ? 'border-t border-white/10 lg:border-t-0' : ''
+                    } lg:border-l lg:pl-8 lg:first:border-l-0 lg:first:pl-0`}
+                  >
+                    <dt className="text-sm text-navy-300">{stat.label}</dt>
+                    <dd className="font-wide text-3xl font-extrabold sm:text-4xl">{stat.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </Container>
           </div>
-          
-          <p className="text-xl md:text-2xl text-neutral-200 mb-12 max-w-4xl mx-auto leading-relaxed mt-8">
-           Experience the power of our premium merchant & payment processing services and start saving from 0% on processing fees today.
-          </p>
+        </section>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
-            <div className="glass rounded-2xl p-6 hover:scale-105 transition-all duration-300">
-              <div className="text-4xl font-bold text-yellow-400 mb-2 leading-tight pb-1">{stats.savings}</div>
-              <div className="text-neutral-300 text-sm">Average Savings</div>
+        {/* How switching works: a real sequence, so it earns its numbering */}
+        <Section tone="white" aria-labelledby="switching-title">
+          <SectionHeading
+            id="switching-title"
+            title="From first call to taking payments in 5 days"
+            intro="Switching processors sounds like a hassle. Here is exactly what happens after you say yes."
+          />
+          <OnboardingTimeline className="mt-14" />
+        </Section>
+
+        {/* What we offer: an index, not a wall of cards */}
+        <Section tone="paper" aria-labelledby="services-title">
+          <div className="grid gap-14 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20">
+            <div>
+              <SectionHeading
+                id="services-title"
+                title="Everything you need to take payments"
+                intro="Processing, equipment and support from one team, so you have one number to call."
+              />
+              <div className="mt-10 overflow-hidden rounded-2xl border border-line bg-white">
+                <Image
+                  src="/multiplemerchant.PNG"
+                  alt="Clover Station, Clover Mini and Clover Flex point of sale devices"
+                  width={1000}
+                  height={1000}
+                  className="h-auto w-full"
+                  sizes="(min-width: 1024px) 40vw, 100vw"
+                />
+              </div>
             </div>
-            <div className="glass rounded-2xl p-6 hover:scale-105 transition-all duration-300">
-              <div className="text-4xl font-bold text-yellow-400 mb-2 leading-tight pb-1">{stats.processing}</div>
-              <div className="text-neutral-300 text-sm">Monthly Processing</div>
-            </div>
-            <div className="glass rounded-2xl p-6 hover:scale-105 transition-all duration-300">
-              <div className="text-4xl font-bold text-yellow-400 mb-2 leading-tight pb-1">{stats.customers}</div>
-              <div className="text-neutral-300 text-sm">Happy Customers</div>
-            </div>
-            <div className="glass rounded-2xl p-6 hover:scale-105 transition-all duration-300">
-              <div className="text-4xl font-bold text-yellow-400 mb-2 leading-tight pb-1">{stats.uptime}</div>
-              <div className="text-neutral-300 text-sm">System Uptime</div>
-            </div>
+            <ul className="divide-y divide-line border-y border-line">
+              {services.map((service) => (
+                <li key={service.title}>
+                  <Link
+                    href={service.href}
+                    className="group flex items-start justify-between gap-6 py-6 transition-colors hover:bg-white sm:px-4"
+                  >
+                    <span>
+                      <span className="block text-xl font-bold text-navy-900">{service.title}</span>
+                      <span className="mt-1 block text-muted">{service.description}</span>
+                    </span>
+                    <ArrowIcon className="mt-2 h-5 w-5 text-navy-700 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
+        </Section>
 
-        </div>
-      </section>
+        {/* Proof from real customers */}
+        <Section tone="navy" aria-labelledby="stories-title">
+          <SectionHeading
+            id="stories-title"
+            tone="dark"
+            title="Local businesses that made the switch"
+            intro="Two of the businesses we set up, in their own words."
+          />
+          <CustomerStories className="mt-14" />
+          <Link href="/portfolio" className="mt-10 inline-flex items-center gap-2 font-semibold text-gold-400 hover:text-white">
+            See the equipment they use
+            <ArrowIcon />
+          </Link>
+        </Section>
 
-      <section className="pt-32 pb-20 bg-gradient-to-b from-neutral-900 to-black">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Everything You Need to 
-              <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-                Process Payments
-              </span>
-            </h2>
-            <p className="text-xl text-neutral-400 max-w-3xl mx-auto">
-              Our comprehensive payment processing platform provides all the tools and services your business needs to succeed.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature) => (
-              <Link
-                key={feature.title}
-                href={feature.link}
-                className="group glass rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-              >
-                <div className="text-yellow-400 mb-6 group-hover:scale-110 transition-transform duration-300">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-bold text-white mb-4 group-hover:text-yellow-400 transition-colors">
-                  {feature.title}
-                </h3>
-                <p className="text-neutral-400 leading-relaxed">
-                  {feature.description}
-                </p>
-                <div className="flex items-center text-yellow-400 mt-6 group-hover:translate-x-2 transition-transform duration-300">
-                  <span className="text-sm font-semibold">Learn More</span>
-                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </Link>
+        {/* Who it's for */}
+        <Section tone="white" aria-labelledby="industries-title">
+          <SectionHeading
+            id="industries-title"
+            title="Set up for the way your business gets paid"
+            intro="Whether customers pay at the counter, at the table, online or on the job."
+          />
+          <ul className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+            {industries.map((industry) => (
+              <li key={industry.title} className="bg-white p-7">
+                <h3 className="text-xl font-bold text-navy-900">{industry.title}</h3>
+                <p className="mt-1 text-muted">{industry.description}</p>
+                <ul className="mt-5 space-y-2">
+                  {industry.features.map((feature) => (
+                    <li key={feature} className="flex gap-2.5 text-[0.95rem]">
+                      <CheckIcon className="mt-0.5 h-4 w-4 text-navy-700" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </li>
             ))}
+          </ul>
+        </Section>
+
+        {/* Questions before booking */}
+        <Section tone="paper" aria-labelledby="faq-title">
+          <div className="grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-20">
+            <SectionHeading id="faq-title" title="Questions business owners ask us first">
+              <Link
+                href="/support"
+                className="mt-6 inline-flex items-center gap-2 font-semibold text-navy-700 hover:text-navy-900"
+              >
+                See all questions
+                <ArrowIcon />
+              </Link>
+            </SectionHeading>
+            <FaqList faqs={homeFaqs} />
           </div>
-        </div>
-      </section>
+        </Section>
 
-      <section className="py-20 bg-gradient-to-r from-yellow-400 to-orange-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-black mb-6">
-            Ready to Start Saving?
-          </h2>
-          <p className="text-xl text-black/80 mb-12 max-w-3xl mx-auto">
-            Join businesses already saving money with our low rate payment processing solutions 
-          </p>
-        </div>
-      </section>
+        {/* The goal of the page: book the call, right here */}
+        <section id="book" aria-labelledby="book-title" className="bg-navy-900 py-20 text-white sm:py-28">
+          <Container className="grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
+            <div>
+              <h2 id="book-title" className="font-wide text-4xl font-extrabold sm:text-5xl">
+                Schedule your free consultation
+              </h2>
+              <p className="mt-5 max-w-prose text-lg text-navy-200">
+                Get a personalized savings analysis and see exactly how much you can save on payment processing.
+              </p>
+              <ul className="mt-8 space-y-3">
+                {['Free consultation & cost analysis', 'Custom pricing proposal', 'No commitment required'].map((item) => (
+                  <li key={item} className="flex items-start gap-3">
+                    <CheckIcon className="mt-0.5 text-gold-400" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-8 text-sm text-navy-300">Calls available Monday to Sunday, 9 AM to 9 PM EST.</p>
+              <p className="mt-2 text-sm text-navy-300">
+                Rather talk now? Call{' '}
+                <a href={PHONE_HREF} className="font-semibold text-gold-400 hover:text-white">
+                  {PHONE_DISPLAY}
+                </a>{' '}
+                or email{' '}
+                <a href={`mailto:${CONTACT_EMAIL}`} className="font-semibold text-gold-400 hover:text-white">
+                  {CONTACT_EMAIL}
+                </a>
+              </p>
+            </div>
+            <CalendlyWidget height={680} />
+          </Container>
+        </section>
+      </main>
 
-      <section className="py-20 bg-gradient-to-b from-neutral-900 to-black">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Schedule Your Free
-              <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-                Consultation
-              </span>
-            </h2>
-            <p className="text-xl text-neutral-400 max-w-3xl mx-auto">
-              Get a personalized savings analysis and see exactly how much you can save on payment processing.
-            </p>
-          </div>
-
-          <div className="max-w-4xl mx-auto">
-            <CalendlyEmbed />
-          </div>
-        </div>
-      </section>
-
-      {/* Exit Intent Popup */}
-      <ExitIntentPopup 
-        isOpen={showExitPopup} 
-        onClose={() => setShowExitPopup(false)} 
-      />
-    </div>
+      <Footer showCta={false} />
+    </>
   );
 }

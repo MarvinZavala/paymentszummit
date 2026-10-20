@@ -10,19 +10,13 @@ export const metadata: Metadata = pageMetadata({
   path: '/portfolio',
 });
 
-export default function PricingLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function PortfolioLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <>
       <JsonLd data={breadcrumbJsonLd([{ name: 'Equipment', path: '/portfolio' }])} />
       <Header />
-      <main className="flex-1 pt-20">
-        {children}
-      </main>
+      <main id="main">{children}</main>
       <Footer />
-    </div>
+    </>
   );
 }

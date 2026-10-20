@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import JsonLd from '@/components/JsonLd';
 import { pageMetadata, breadcrumbJsonLd, SITE_URL } from '@/lib/site';
 
@@ -24,7 +26,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <>
       <JsonLd data={breadcrumbJsonLd([{ name: 'Credit Card Processing', path: '/credit-card-processing' }])} />
       <JsonLd data={serviceJsonLd} />
-      {children}
+      <Header />
+      <main id="main">{children}</main>
+      <Footer />
     </>
   );
 }

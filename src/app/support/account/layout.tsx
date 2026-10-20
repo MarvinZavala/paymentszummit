@@ -8,6 +8,7 @@ export const metadata: Metadata = pageMetadata({
   path: '/support/account',
 });
 
+// Header, main and Footer come from the parent /support layout; this one only adds metadata and JSON-LD.
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <>

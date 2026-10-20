@@ -1,642 +1,334 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import Header from '@/components/Header';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import FloatingLeadCapture from '@/components/FloatingLeadCapture';
+import { CalendlyButton } from '@/components/CalendlyWidget';
+import { ArrowIcon, ButtonLink, CheckIcon } from '@/components/ui/Button';
+import { PageHero, Section, SectionHeading } from '@/components/ui/Layout';
+import OnboardingTimeline from '@/components/sections/OnboardingTimeline';
+import { cn } from '@/lib/utils';
+
+type Product = {
+  /** Also the tab's element id, so /products#pos-systems opens on that product. */
+  id: string;
+  tab: string;
+  title: string;
+  summary: string;
+  audience: string;
+  features: { name: string; description: string }[];
+  benefits: string[];
+  link?: { href: string; label: string };
+};
+
+const products: Product[] = [
+  {
+    id: 'credit-card',
+    tab: 'Credit card processing',
+    title: 'Credit card processing',
+    summary:
+      'Accept all major credit and debit cards at competitive rates tailored to your business volume and industry.',
+    audience: 'Any business that takes card payments in person, online or over the phone.',
+    features: [
+      { name: 'All major cards', description: 'Visa, Mastercard, American Express, Discover and more.' },
+      { name: 'Fees from 0%', description: 'Processing fees start at 0% for qualifying merchants.' },
+      {
+        name: 'Fast funding',
+        description: 'Funds arrive the next business day. Same-day funding is available for qualifying merchants.',
+      },
+      { name: 'Advanced security', description: 'End-to-end encryption and tokenization protect every payment.' },
+    ],
+    benefits: [
+      'Accept payments in person, online and over the phone',
+      'Real-time transaction reporting and analytics',
+      'Fraud protection and chargeback management',
+      'Help with PCI DSS compliance',
+      'Works with popular business tools',
+    ],
+    link: { href: '/credit-card-processing', label: 'More about credit card processing' },
+  },
+  {
+    id: 'pos-systems',
+    tab: 'POS systems',
+    title: 'Point of sale systems',
+    summary: 'Modern point of sale systems that handle payments, inventory, customers and sales reports.',
+    audience: 'Retail stores, restaurants and service businesses.',
+    features: [
+      { name: 'All-in-one terminal', description: 'Process payments, manage inventory and track sales.' },
+      { name: 'Inventory management', description: 'Track stock levels, set alerts and manage suppliers.' },
+      { name: 'Customer management', description: 'Build customer profiles and loyalty programs.' },
+      { name: 'Multiple locations', description: 'Manage every location from a single dashboard.' },
+    ],
+    benefits: [
+      'Cloud-based, so you can reach it from anywhere',
+      'Real-time sales reporting and analytics',
+      'Employee management and time tracking',
+      'Works with accounting software',
+      '24/7 support and training',
+    ],
+    link: { href: '/portfolio', label: 'See the POS equipment' },
+  },
+  {
+    id: 'ecommerce',
+    tab: 'E-commerce',
+    title: 'E-commerce payments',
+    summary: 'Online payment processing for your website or app.',
+    audience: 'Businesses that sell online, through a website or an app.',
+    features: [
+      { name: 'Payment gateway', description: 'A secure API for processing online payments.' },
+      { name: 'Shopping cart integration', description: 'Connects easily with popular platforms.' },
+      { name: 'Mobile-friendly checkout', description: 'A responsive checkout that works on every device.' },
+      { name: 'Subscription billing', description: 'Recurring payments processed automatically.' },
+    ],
+    benefits: [
+      'More than 40 payment methods supported worldwide',
+      'Advanced fraud detection and prevention',
+      'One-click checkout and saved payment methods',
+      'Detailed transaction analytics and reporting',
+      'Developer-friendly APIs and documentation',
+    ],
+  },
+  {
+    id: 'mobile',
+    tab: 'Mobile payments',
+    title: 'Mobile payments',
+    summary: 'Accept payments anywhere with our mobile card readers and apps.',
+    audience: 'Service businesses and anyone who gets paid on the go.',
+    features: [
+      { name: 'Mobile card reader', description: 'Accepts chip, swipe and contactless payments.' },
+      { name: 'Digital wallets', description: 'Apple Pay, Google Pay and Samsung Pay.' },
+      { name: 'Invoices and estimates', description: 'Send professional invoices and get paid.' },
+      { name: 'Real-time reporting', description: 'Track sales and run your business on the go.' },
+    ],
+    benefits: [
+      'No monthly fees for basic mobile processing',
+      'Same-day funding for qualifying merchants',
+      'Works with iOS and Android devices',
+      'Take payments even when you are offline',
+      'Receipts by email or text message',
+    ],
+    link: { href: '/portfolio', label: 'See the mobile equipment' },
+  },
+  {
+    id: 'gateway',
+    tab: 'Payment gateway',
+    title: 'Payment gateway',
+    summary: 'Secure online payments and invoicing, powered by Centz.',
+    audience: 'Businesses that bill customers remotely, by invoice, email or the web.',
+    features: [
+      { name: 'Online invoicing', description: 'Create and send professional invoices with payment links.' },
+      { name: 'Remote payment collection', description: 'Get paid from anywhere, by email or on the web.' },
+      { name: 'Secure processing', description: 'Enterprise-grade security with end-to-end encryption.' },
+      { name: 'Real-time notifications', description: 'Instant alerts for payments and transaction updates.' },
+    ],
+    benefits: [
+      'Professional invoice templates with your branding',
+      'Multi-currency support for global businesses',
+      'Automatic payment reminders and follow-ups',
+      'Detailed reporting and analytics dashboard',
+      'Works with popular accounting software',
+    ],
+    link: { href: '/portfolio', label: 'See the payment gateway' },
+  },
+];
+
+const reasons = [
+  {
+    title: 'Low or high risk',
+    description: 'Competitive rates and transparent pricing that help you save on processing fees.',
+  },
+  {
+    title: 'Bank-level security',
+    description: 'PCI DSS compliant, with end-to-end encryption and advanced fraud protection.',
+  },
+  {
+    title: '24/7 support',
+    description: 'Round-the-clock help from payment processing experts who care about your success.',
+  },
+];
 
 export default function Products() {
-  const [activeTab, setActiveTab] = useState('credit-card');
+  const [activeId, setActiveId] = useState(products[0].id);
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const active = products.find((product) => product.id === activeId) ?? products[0];
 
-  const productCategories = [
-    {
-      id: 'credit-card',
-      name: 'Credit Card Processing',
-      icon: (
-        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"/>
-        </svg>
-      )
-    },
-    {
-      id: 'pos-systems',
-      name: 'POS Systems',
-      icon: (
-        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
-        </svg>
-      )
-    },
-    {
-      id: 'ecommerce',
-      name: 'E-commerce',
-      icon: (
-        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/>
-        </svg>
-      )
-    },
-    {
-      id: 'mobile',
-      name: 'Mobile Payments',
-      icon: (
-        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 011 1v8a1 1 0 01-1 1H5a1 1 0 01-1-1V7zM9 9a1 1 0 000 2h2a1 1 0 100-2H9z"/>
-        </svg>
-      )
-    },
-    {
-      id: 'gateway',
-      name: 'Payment Gateway',
-      icon: (
-        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 8a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8z"/>
-          <path d="M5 10h10v2H5v-2z"/>
-        </svg>
-      )
-    }
-  ];
+  // Open on the product named in the URL hash (for example /products#mobile).
+  useEffect(() => {
+    const selectFromHash = () => {
+      const id = window.location.hash.slice(1);
+      if (products.some((product) => product.id === id)) setActiveId(id);
+    };
+    selectFromHash();
+    window.addEventListener('hashchange', selectFromHash);
+    return () => window.removeEventListener('hashchange', selectFromHash);
+  }, []);
 
-  const productData = {
-    'credit-card': {
-      title: 'Credit Card Processing',
-      subtitle: 'Accept all major credit and debit cards with industry-leading rates',
-      features: [
-        {
-          name: 'All Card Types Accepted',
-          description: 'Visa, Mastercard, American Express, Discover, and more',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-          )
-        },
-        {
-          name: 'Competitive Rates',
-          description: 'Starting at 0% per transaction',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.51-1.31c-.562-.649-1.413-1.076-2.353-1.253V5z" clipRule="evenodd"/>
-            </svg>
-          )
-        },
-        {
-          name: 'Fast Settlement',
-          description: 'Next-day funding available for qualifying merchants',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
-            </svg>
-          )
-        },
-        {
-          name: 'Advanced Security',
-          description: 'End-to-end encryption and tokenization for maximum security',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-            </svg>
-          )
-        }
-      ],
-      benefits: [
-        'Accept payments in-person, online, and over the phone',
-        'Real-time transaction reporting and analytics',
-        'Fraud protection and chargeback management',
-        'PCI DSS compliance assistance',
-        'Integration with popular business tools'
-      ]
-    },
-    'pos-systems': {
-      title: 'Point of Sale Systems',
-      subtitle: 'Modern POS solutions for retail, restaurants, and service businesses',
-      features: [
-        {
-          name: 'All-in-One Terminal',
-          description: 'Process payments, manage inventory, and track sales',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
-            </svg>
-          )
-        },
-        {
-          name: 'Inventory Management',
-          description: 'Track stock levels, set alerts, and manage suppliers',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
-            </svg>
-          )
-        },
-        {
-          name: 'Customer Management',
-          description: 'Build customer profiles and loyalty programs',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
-            </svg>
-          )
-        },
-        {
-          name: 'Multi-Location Support',
-          description: 'Manage multiple locations from a single dashboard',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/>
-            </svg>
-          )
-        }
-      ],
-      benefits: [
-        'Cloud-based system accessible anywhere',
-        'Real-time sales reporting and analytics',
-        'Employee management and time tracking',
-        'Integration with accounting software',
-        '24/7 customer support and training'
-      ]
-    },
-    'ecommerce': {
-      title: 'E-commerce Solutions',
-      subtitle: 'Seamless online payment processing for your website or app',
-      features: [
-        {
-          name: 'Payment Gateway',
-          description: 'Secure API for processing online payments',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
-            </svg>
-          )
-        },
-        {
-          name: 'Shopping Cart Integration',
-          description: 'Easy integration with popular platforms',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/>
-            </svg>
-          )
-        },
-        {
-          name: 'Mobile Optimization',
-          description: 'Responsive checkout for all devices',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 011 1v8a1 1 0 01-1 1H5a1 1 0 01-1-1V7zM9 9a1 1 0 000 2h2a1 1 0 100-2H9z"/>
-            </svg>
-          )
-        },
-        {
-          name: 'Subscription Billing',
-          description: 'Automated recurring payment processing',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd"/>
-            </svg>
-          )
-        }
-      ],
-      benefits: [
-        'Support for 40+ payment methods globally',
-        'Advanced fraud detection and prevention',
-        'One-click checkout and saved payment methods',
-        'Detailed transaction analytics and reporting',
-        'Developer-friendly APIs and documentation'
-      ]
-    },
-    'mobile': {
-      title: 'Mobile Payment Solutions',
-      subtitle: 'Accept payments anywhere with our mobile card readers and apps',
-      features: [
-        {
-          name: 'Mobile Card Reader',
-          description: 'Accept chip, swipe, and contactless payments',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 011 1v8a1 1 0 01-1 1H5a1 1 0 01-1-1V7zM9 9a1 1 0 000 2h2a1 1 0 100-2H9z"/>
-            </svg>
-          )
-        },
-        {
-          name: 'Digital Wallets',
-          description: 'Apple Pay, Google Pay, Samsung Pay support',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"/>
-            </svg>
-          )
-        },
-        {
-          name: 'Invoice & Estimates',
-          description: 'Send professional invoices and accept payments',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"/>
-            </svg>
-          )
-        },
-        {
-          name: 'Real-time Reporting',
-          description: 'Track sales and manage business on-the-go',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
-            </svg>
-          )
-        }
-      ],
-      benefits: [
-        'No monthly fees for basic mobile processing',
-        'Same-day funding available',
-        'Works with iOS and Android devices',
-        'Offline payment processing capability',
-        'Customer receipt via email or SMS'
-      ]
-    },
-    'gateway': {
-      title: 'Payment Gateway',
-      subtitle: 'Secure online payment processing and invoice management powered by Centz',
-      features: [
-        {
-          name: 'Online Invoicing',
-          description: 'Create and send professional invoices with payment links',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"/>
-            </svg>
-          )
-        },
-        {
-          name: 'Remote Payment Collection',
-          description: 'Accept payments from anywhere via email and web',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-              <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-            </svg>
-          )
-        },
-        {
-          name: 'Secure Processing',
-          description: 'Enterprise-grade security with end-to-end encryption',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-            </svg>
-          )
-        },
-        {
-          name: 'Real-time Notifications',
-          description: 'Instant alerts for payments and transaction updates',
-          icon: (
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
-            </svg>
-          )
-        }
-      ],
-      benefits: [
-        'Professional invoice templates with your branding',
-        'Multi-currency support for global businesses',
-        'Automated payment reminders and follow-ups',
-        'Detailed reporting and analytics dashboard',
-        'Integration with popular accounting software'
-      ]
-    }
+  // Arrow keys, Home and End move between tabs (WAI-ARIA tabs pattern, automatic activation).
+  const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const targets: Record<string, number> = {
+      ArrowRight: index + 1,
+      ArrowLeft: index - 1,
+      Home: 0,
+      End: products.length - 1,
+    };
+    if (!(event.key in targets)) return;
+    event.preventDefault();
+    const next = products[(targets[event.key] + products.length) % products.length];
+    setActiveId(next.id);
+    tabRefs.current[next.id]?.focus();
   };
 
-  const currentProduct = productData[activeTab as keyof typeof productData];
-
   return (
-    <div className="min-h-screen">
-      <Header />
+    <>
       <FloatingLeadCapture pageName="products" />
-      
-      <section className="relative py-20 pt-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-dark via-primary-blue to-luxury-purple opacity-90"></div>
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full mix-blend-multiply filter blur-xl animate-breathe"></div>
-          <div className="absolute top-40 right-10 w-72 h-72 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-xl animate-breathe-delay"></div>
-        </div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 animate-fade-in">
-            <span className="inline-block animate-slide-up">Payment Solutions</span>
-            <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent animate-slide-up-delay">
-              Built for Your Business
-            </span>
-          </h1>
-          
-          <p className="text-xl md:text-2xl text-neutral-200 mb-12 max-w-4xl mx-auto">
-            Comprehensive payment processing solutions designed to help your business grow, 
-            save money, and provide exceptional customer experiences.
-          </p>
 
-          <div className="flex flex-col sm:flex-row sm:flex-wrap justify-center gap-4 mb-8 max-w-4xl mx-auto">
-            {productCategories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setActiveTab(category.id)}
-                className={`flex items-center justify-center space-x-3 px-6 py-4 rounded-full font-semibold transition-all duration-300 w-full sm:w-auto sm:min-w-[180px] ${
-                  activeTab === category.id
-                    ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-black'
-                    : 'glass border border-white/20 text-white hover:bg-white/10'
-                }`}
-              >
-                <span className={activeTab === category.id ? 'text-black' : 'text-yellow-400'}>
-                  {category.icon}
-                </span>
-                <span className="text-sm sm:text-base">{category.name}</span>
-              </button>
-            ))}
+      <PageHero
+        title="Payment solutions built for your business"
+        lead="Take payments in your store, online, on the go or by invoice. Processing fees start at 0% for qualifying merchants, with competitive rates tailored to your volume and industry for everyone else."
+        actions={
+          <>
+            <CalendlyButton text="Schedule a free call" size="lg" />
+            <ButtonLink href="/get-quote" variant="outline-light" size="lg">
+              Get a free quote
+            </ButtonLink>
+          </>
+        }
+      >
+        {/* Folder tabs sit on the bottom edge of the hero; the selected one opens into the white panel below. */}
+        <div className="-mx-5 -mb-16 mt-14 overflow-x-auto px-5 [scrollbar-width:none] sm:-mx-8 sm:-mb-20 sm:mt-16 sm:px-8 [&::-webkit-scrollbar]:hidden">
+          <div role="tablist" aria-label="Payment solutions" className="flex w-max gap-1.5">
+            {products.map((product, index) => {
+              const selected = product.id === activeId;
+              return (
+                <button
+                  key={product.id}
+                  ref={(element) => {
+                    tabRefs.current[product.id] = element;
+                  }}
+                  type="button"
+                  role="tab"
+                  id={product.id}
+                  aria-selected={selected}
+                  aria-controls="product-panel"
+                  tabIndex={selected ? 0 : -1}
+                  onClick={(event) => {
+                    setActiveId(product.id);
+                    event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                  }}
+                  onKeyDown={(event) => onTabKeyDown(event, index)}
+                  className={cn(
+                    'scroll-mt-28 whitespace-nowrap rounded-t-xl px-4 py-3.5 text-[0.95rem] font-semibold transition-colors focus-visible:[outline-offset:-5px] sm:px-6 sm:py-4 sm:text-base',
+                    selected
+                      ? 'bg-white text-navy-900'
+                      : 'bg-white/[0.07] text-navy-200 hover:bg-white/[0.14] hover:text-white'
+                  )}
+                >
+                  {product.tab}
+                </button>
+              );
+            })}
           </div>
         </div>
-      </section>
+      </PageHero>
 
-      <section className="py-20 bg-gradient-to-b from-neutral-900 to-black">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Onboarding
-              <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-                Timeline
-              </span>
+      {/* The selected product: what it is, who it's for, what you get, and what to do next */}
+      <Section tone="white" className="pt-14 sm:pt-20" aria-labelledby="product-title">
+        <div
+          role="tabpanel"
+          id="product-panel"
+          aria-labelledby={active.id}
+          tabIndex={0}
+          className="grid gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-16 xl:gap-24"
+        >
+          <div>
+            <h2 id="product-title" className="font-wide text-3xl font-extrabold text-navy-900 sm:text-[2.6rem]">
+              {active.title}
             </h2>
-            <p className="text-xl text-neutral-400 max-w-3xl mx-auto">
-              Your journey to seamless payment processing starts here. Follow our simple 5-step process.
-            </p>
-          </div>
+            <p className="mt-4 max-w-prose text-lg text-muted">{active.summary}</p>
+            <dl className="mt-8 max-w-prose border-l-2 border-navy-900 pl-5">
+              <dt className="text-sm font-semibold text-navy-700">Who it’s for</dt>
+              <dd className="mt-1 text-ink">{active.audience}</dd>
+            </dl>
 
-          <div className="relative max-w-7xl mx-auto">
-            {/* Enhanced Timeline Line with Gradient */}
-            <div className="absolute top-32 left-0 right-0 h-3 bg-gradient-to-r from-yellow-400 via-orange-500 via-yellow-400 via-orange-500 to-yellow-400 rounded-full hidden lg:block shadow-lg">
-              <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 via-orange-500/20 to-yellow-400/20 rounded-full blur-sm"></div>
-            </div>
-            
-            {/* Timeline Steps with Uniform Design */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-              {/* Step 1 */}
-              <div className="relative group">
-                <div className="glass rounded-3xl p-6 text-center hover:scale-105 transition-all duration-500 hover:shadow-2xl hover:shadow-blue-400/20 border border-blue-400/20 h-80">
-                  {/* Single Number Badge */}
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-black font-bold text-lg shadow-2xl">
-                    1
-                  </div>
-                  
-                  {/* Day Badge */}
-                  <div className="absolute -top-2 -right-2 bg-gradient-to-br from-blue-500 to-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                    1 Day
-                  </div>
-                  
-                  <div className="mt-8 mb-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto flex items-center justify-center mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300">
-                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H6zm1 2a1 1 0 000 2h6a1 1 0 100-2H7zm6 7a1 1 0 011 1v3a1 1 0 11-2 0v-3a1 1 0 011-1zm-3 3a1 1 0 100 2h.01a1 1 0 100-2H10zm-4 1a1 1 0 011-1h.01a1 1 0 110 2H7a1 1 0 01-1-1zm1-4a1 1 0 100 2h.01a1 1 0 100-2H7zm2 0a1 1 0 100 2h.01a1 1 0 100-2H9zm2 0a1 1 0 100 2h.01a1 1 0 100-2H11z" clipRule="evenodd"/>
-                      </svg>
-                    </div>
-                    <h3 className="text-white font-bold text-lg mb-2">Mutual Agreement</h3>
-                    <p className="text-neutral-300 text-sm leading-relaxed">
-                      Mutual agreement w/ the payment processing + equipment. Complete e-doc application
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 2 */}
-              <div className="relative group">
-                <div className="glass rounded-3xl p-6 text-center hover:scale-105 transition-all duration-500 hover:shadow-2xl hover:shadow-green-400/20 border border-green-400/20 h-80">
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-black font-bold text-lg shadow-2xl">
-                    2
-                  </div>
-                  
-                  <div className="absolute -top-2 -right-2 bg-gradient-to-br from-green-500 to-teal-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                    2 Day
-                  </div>
-                  
-                  <div className="mt-8 mb-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-teal-600 rounded-full mx-auto flex items-center justify-center mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300">
-                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/>
-                      </svg>
-                    </div>
-                    <h3 className="text-white font-bold text-lg mb-2">Underwriting Process</h3>
-                    <p className="text-neutral-300 text-sm leading-relaxed">
-                      Underwriting process (2 business days)
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 3 */}
-              <div className="relative group">
-                <div className="glass rounded-3xl p-6 text-center hover:scale-105 transition-all duration-500 hover:shadow-2xl hover:shadow-purple-400/20 border border-purple-400/20 h-80">
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-black font-bold text-lg shadow-2xl">
-                    3
-                  </div>
-                  
-                  <div className="absolute -top-2 -right-2 bg-gradient-to-br from-purple-500 to-pink-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                    3 Day
-                  </div>
-                  
-                  <div className="mt-8 mb-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full mx-auto flex items-center justify-center mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300">
-                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                      </svg>
-                    </div>
-                    <h3 className="text-white font-bold text-lg mb-2">Continued Process</h3>
-                    <p className="text-neutral-300 text-sm leading-relaxed">
-                      Cont. Underwriting process
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 4 */}
-              <div className="relative group">
-                <div className="glass rounded-3xl p-6 text-center hover:scale-105 transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-400/20 border border-indigo-400/20 h-80">
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-black font-bold text-lg shadow-2xl">
-                    4
-                  </div>
-                  
-                  <div className="absolute -top-2 -right-2 bg-gradient-to-br from-indigo-500 to-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                    4 Day
-                  </div>
-                  
-                  <div className="mt-8 mb-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-full mx-auto flex items-center justify-center mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300">
-                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-                      </svg>
-                    </div>
-                    <h3 className="text-white font-bold text-lg mb-2">Approval Email</h3>
-                    <p className="text-neutral-300 text-sm leading-relaxed">
-                      Approval email<br/>
-                      2 days express shipping
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 5 */}
-              <div className="relative group">
-                <div className="glass rounded-3xl p-6 text-center hover:scale-105 transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-400/20 border border-emerald-400/20 h-80">
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-black font-bold text-lg shadow-2xl">
-                    5
-                  </div>
-                  
-                  <div className="absolute -top-2 -right-2 bg-gradient-to-br from-emerald-500 to-green-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                    5 Day
-                  </div>
-                  
-                  <div className="mt-8 mb-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full mx-auto flex items-center justify-center mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300">
-                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd"/>
-                      </svg>
-                    </div>
-                    <h3 className="text-white font-bold text-lg mb-2">Equipment Delivered</h3>
-                    <p className="text-neutral-300 text-sm leading-relaxed">
-                      Equipment delivered and begin processing payments
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20 bg-gradient-to-b from-black to-neutral-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              {currentProduct.title}
-            </h2>
-            <p className="text-xl text-neutral-400 max-w-3xl mx-auto">
-              {currentProduct.subtitle}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
-            <div className="space-y-8">
-              {currentProduct.features.map((feature, index) => (
-                <div key={index} className="flex items-start space-x-6">
-                  <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center">
-                    <span className="text-black">
-                      {feature.icon}
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-2">{feature.name}</h3>
-                    <p className="text-neutral-400 leading-relaxed">{feature.description}</p>
-                  </div>
+            <h3 className="mt-12 text-lg font-bold text-navy-900">Features</h3>
+            <dl className="mt-4 grid border-t border-line sm:grid-cols-2 sm:gap-x-10">
+              {active.features.map((feature) => (
+                <div key={feature.name} className="border-b border-line py-5">
+                  <dt className="font-bold text-navy-900">{feature.name}</dt>
+                  <dd className="mt-1 text-muted">{feature.description}</dd>
                 </div>
               ))}
-            </div>
+            </dl>
+          </div>
 
-            <div className="glass rounded-3xl p-8">
-              <h3 className="text-2xl font-bold text-white mb-6">Key Benefits</h3>
-              <div className="space-y-4">
-                {currentProduct.benefits.map((benefit, index) => (
-                  <div key={index} className="flex items-start space-x-3">
-                    <svg className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                    </svg>
-                    <span className="text-neutral-300">{benefit}</span>
-                  </div>
-                ))}
-              </div>
+          <div className="self-start rounded-2xl border border-line bg-paper p-7 sm:p-9">
+            <h3 className="text-lg font-bold text-navy-900">Key benefits</h3>
+            <ul className="mt-5 space-y-3">
+              {active.benefits.map((benefit) => (
+                <li key={benefit} className="flex items-start gap-3">
+                  <CheckIcon className="mt-0.5 text-navy-700" />
+                  <span>{benefit}</span>
+                </li>
+              ))}
+            </ul>
 
-              <div className="mt-8 pt-8 border-t border-white/10">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Link
-                    href="/portfolio"
-                    className="flex-1 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black px-6 py-3 rounded-full font-bold text-center transition-all duration-300 hover:scale-105"
-                  >
-                    View Equipment
-                  </Link>
-                  <Link
-                    href="/contact"
-                    className="flex-1 glass border border-white/20 text-white hover:bg-white/10 px-6 py-3 rounded-full font-semibold text-center transition-all duration-300 hover:scale-105"
-                  >
-                    Get Quote
-                  </Link>
-                </div>
+            <div className="mt-8 border-t border-line pt-8">
+              <h3 className="text-lg font-bold text-navy-900">Next step</h3>
+              <p className="mt-2 text-muted">
+                Book a free 30-minute call. We’ll review your current setup and show you where you can save on fees.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <CalendlyButton text="Schedule a free call" />
+                <ButtonLink href="/get-quote" variant="outline-dark">
+                  Get a free quote
+                </ButtonLink>
               </div>
+              {active.link && (
+                <Link
+                  href={active.link.href}
+                  className="mt-6 inline-flex items-center gap-2 font-semibold text-navy-700 hover:text-navy-900"
+                >
+                  {active.link.label}
+                  <ArrowIcon />
+                </Link>
+              )}
             </div>
           </div>
         </div>
-      </section>
+      </Section>
 
-      <section className="py-20 bg-gradient-to-b from-black to-neutral-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Why Choose
-              <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-                Zummit Payments?
-              </span>
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-10 h-10 text-black" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.51-1.31c-.562-.649-1.413-1.076-2.353-1.253V5z" clipRule="evenodd"/>
-                </svg>
+      {/* Why Zummit: a short spec list rather than a row of icon cards */}
+      <Section tone="paper" aria-labelledby="why-title">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-20">
+          <SectionHeading id="why-title" title="Why business owners choose Zummit Payments">
+            <Link
+              href="/company"
+              className="mt-6 inline-flex items-center gap-2 font-semibold text-navy-700 hover:text-navy-900"
+            >
+              About our company
+              <ArrowIcon />
+            </Link>
+          </SectionHeading>
+          <dl className="divide-y divide-line border-y border-line">
+            {reasons.map((reason) => (
+              <div key={reason.title} className="grid gap-2 py-7 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)] sm:gap-8">
+                <dt className="font-wide text-xl font-bold text-navy-900">{reason.title}</dt>
+                <dd className="text-lg text-muted">{reason.description}</dd>
               </div>
-              <h3 className="text-2xl font-bold text-white mb-4">Low or High Risk</h3>
-              <p className="text-neutral-400 leading-relaxed">
-                Our competitive rates and transparent pricing help you save significantly on processing fees.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-10 h-10 text-black" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-4">Bank-Level Security</h3>
-              <p className="text-neutral-400 leading-relaxed">
-                PCI DSS compliant with end-to-end encryption and advanced fraud protection.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-10 h-10 text-black" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-4">24/7 Support</h3>
-              <p className="text-neutral-400 leading-relaxed">
-                Round-the-clock customer support from payment processing experts who care about your success.
-              </p>
-            </div>
-          </div>
+            ))}
+          </dl>
         </div>
-      </section>
+      </Section>
 
-      <section className="py-20 bg-gradient-to-r from-yellow-400 to-orange-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-black mb-6">
-            Ready to Get Started?
-          </h2>
-          <p className="text-xl text-black/80 mb-12 max-w-3xl mx-auto">
-            Join the other businesses that trust Zummit Payments for their payment processing integrations. 
-          </p>
-          
-        </div>
-      </section>
-    </div>
+      {/* Onboarding: a real sequence */}
+      <Section tone="white" aria-labelledby="onboarding-title">
+        <SectionHeading
+          id="onboarding-title"
+          title="From agreement to taking payments in 5 days"
+          intro="Underwriting takes about 2 business days, then your equipment ships with 2-day express shipping."
+        />
+        <OnboardingTimeline className="mt-14" />
+      </Section>
+    </>
   );
 }

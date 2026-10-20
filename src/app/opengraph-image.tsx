@@ -21,7 +21,7 @@ export default async function Image() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #312e81 100%)',
+          background: '#0E2152',
           color: 'white',
           padding: 64,
         }}
@@ -39,7 +39,7 @@ export default async function Image() {
         </div>
         <div style={{ marginTop: 16, fontSize: 40, color: '#e5e7eb' }}>{SITE_TAGLINE}</div>
         <div style={{ marginTop: 40, fontSize: 30, color: '#cbd5e1' }}>
-          Lower processing fees · Clover POS · 24/7 support
+          From zero to low processing fees
         </div>
       </div>
     ),

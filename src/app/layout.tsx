@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Archivo, IBM_Plex_Mono } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
@@ -13,14 +13,20 @@ import {
   SOCIAL_PROFILES,
 } from "@/lib/site";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Archivo is loaded with its width axis so headings can run wide (see .font-wide).
+const archivo = Archivo({
+  variable: "--font-archivo",
   subsets: ["latin"],
+  axes: ["wdth"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Only used for the receipt motif.
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
   subsets: ["latin"],
+  weight: ["400", "600"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -109,7 +115,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#1e3a8a',
+  themeColor: '#0E2152',
   width: 'device-width',
   initialScale: 1,
 };
@@ -161,7 +167,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${archivo.variable} ${plexMono.variable}`}
       >
         <JsonLd data={organizationJsonLd} />
         {children}

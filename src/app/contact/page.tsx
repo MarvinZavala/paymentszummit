@@ -1,68 +1,346 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from 'react';
 import Link from 'next/link';
-import Header from '@/components/Header';
 import FloatingLeadCapture from '@/components/FloatingLeadCapture';
+import { CalendlyButton } from '@/components/CalendlyWidget';
+import { buttonClasses, CheckIcon } from '@/components/ui/Button';
+import { PageHero, Section, SectionHeading } from '@/components/ui/Layout';
 import { supabase, type ContactMessage } from '@/lib/supabase';
+import { CONTACT_EMAIL, PHONE_DISPLAY, PHONE_HREF } from '@/lib/site';
+import { cn } from '@/lib/utils';
+
+type FormData = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  company: string;
+  website: string;
+  monthlyVolume: string;
+  currentProcessor: string;
+  message: string;
+  contactReason: string;
+};
+
+type Field = keyof FormData;
+type Errors = Partial<Record<Field, string>>;
+
+const emptyForm: FormData = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+  company: '',
+  website: '',
+  monthlyVolume: '',
+  currentProcessor: '',
+  message: '',
+  contactReason: '',
+};
+
+// `value` is what gets stored in Supabase, so it stays exactly as it was. Only the visible label is plain.
+const contactReasons = [
+  { value: 'Get a Custom Quote 💰', label: 'Get a custom quote' },
+  { value: 'I need Help Setting Up 🛠️', label: 'Help setting up' },
+  { value: 'Technical Support 🆘', label: 'Technical support' },
+  { value: 'I want to Partner with You 🤝', label: 'Partner with us' },
+  { value: 'Just Curious About Services 🤔', label: 'Learn about your services' },
+  { value: 'My Current Processor Stinks 😤', label: "I'm unhappy with my current processor" },
+];
+
+const volumeRanges = [
+  { value: 'Just getting started (Under $5K)', label: 'Under $5K' },
+  { value: 'Small but mighty ($5K - $25K)', label: '$5K to $25K' },
+  { value: 'Growing business ($25K - $50K)', label: '$25K to $50K' },
+  { value: 'Solid performer ($50K - $100K)', label: '$50K to $100K' },
+  { value: 'High volume player ($100K - $500K)', label: '$100K to $500K' },
+  { value: 'Big league (Over $500K) 🏆', label: 'Over $500K' },
+];
+
+const responsePromises = [
+  'Reply within 2 hours during business hours',
+  'Custom quote delivered within 24 hours',
+  'No pushy sales tactics, just honest advice',
+];
+
+// Built with the constructor so the `u` flag compiles under the ES2017 target.
+const NAME_PATTERN = new RegExp("^[\\p{L}\\s'.-]+$", 'u');
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PHONE_PATTERN = /^[+\d\s().-]+$/;
+const WEBSITE_PATTERN = /^(https?:\/\/)?[^\s/.]+(\.[^\s/.]+)+(\/\S*)?$/i;
+
+// Fields that can show an error, in the order they appear in the form.
+const checkedFields: Field[] = ['firstName', 'lastName', 'email', 'phone', 'website', 'contactReason'];
+
+function validateField(field: Field, raw: string): string | undefined {
+  const value = raw.trim();
+  switch (field) {
+    case 'firstName':
+      if (!value) return 'Enter your first name';
+      if (!NAME_PATTERN.test(value)) return 'Use letters only in your first name. Accents, apostrophes and hyphens are fine.';
+      return undefined;
+    case 'lastName':
+      if (!value) return 'Enter your last name';
+      if (!NAME_PATTERN.test(value)) return 'Use letters only in your last name. Accents, apostrophes and hyphens are fine.';
+      return undefined;
+    case 'email':
+      if (!value) return 'Enter your email address';
+      if (!EMAIL_PATTERN.test(value)) return 'Enter an email address like name@example.com';
+      return undefined;
+    case 'phone': {
+      if (!value) return 'Enter your phone number';
+      const digits = value.replace(/\D/g, '').length;
+      if (!PHONE_PATTERN.test(value) || digits < 10 || digits > 15) {
+        return 'Enter your phone number with area code, like (555) 123-4567';
+      }
+      return undefined;
+    }
+    case 'website':
+      if (value && !WEBSITE_PATTERN.test(value)) return 'Enter a website address like yourbusiness.com, or leave it blank';
+      return undefined;
+    case 'contactReason':
+      if (!value) return 'Choose what we can help you with';
+      return undefined;
+    default:
+      return undefined;
+  }
+}
+
+type TawkWindow = Window & { Tawk_API?: { maximize?: () => void } };
+
+/** Opens the Tawk.to chat. If the chat script hasn't loaded (blocked or slow), sends people to the form instead. */
+function openLiveChat() {
+  const tawk = (window as TawkWindow).Tawk_API;
+  if (typeof tawk?.maximize === 'function') {
+    tawk.maximize();
+    return;
+  }
+  focusField('contact-firstName');
+}
+
+function focusField(id: string) {
+  const element = document.getElementById(id);
+  if (!element) return;
+  element.scrollIntoView({ block: 'center' });
+  element.focus({ preventScroll: true });
+}
+
+const controlBase =
+  'block w-full rounded-xl border bg-white px-4 py-3 text-base text-ink placeholder:text-muted/60 transition-colors scroll-mt-32 hover:border-navy-300 focus:border-navy-700 focus:outline-none focus:ring-1 focus:ring-navy-700 focus:transform-none';
+const controlValid = 'border-line';
+const controlInvalid = 'border-red-700 hover:border-red-700 focus:border-red-700 focus:ring-red-700';
+
+/** Label, optional hint, the control and its error message. */
+function FormField({
+  id,
+  label,
+  required,
+  hint,
+  error,
+  className,
+  children,
+}: {
+  id: string;
+  label: string;
+  required?: boolean;
+  hint?: string;
+  error?: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className={className}>
+      <label htmlFor={id} className="block font-semibold text-ink">
+        {label}
+        {required ? (
+          <span aria-hidden="true" className="ml-0.5 text-red-700">
+            *
+          </span>
+        ) : (
+          <span className="ml-1.5 text-sm font-normal text-muted">(optional)</span>
+        )}
+      </label>
+      {hint && (
+        <p id={`${id}-hint`} className="mt-1 text-sm text-muted">
+          {hint}
+        </p>
+      )}
+      <div className="mt-2">{children}</div>
+      {error && (
+        <p id={`${id}-error`} className="mt-2 flex items-start gap-1.5 text-sm font-medium text-red-700">
+          <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path
+              fillRule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span>
+            <span className="sr-only">Error: </span>
+            {error}
+          </span>
+        </p>
+      )}
+    </div>
+  );
+}
+
+function SelectChevron() {
+  return (
+    <svg
+      className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      aria-hidden="true"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="m6 8 4 4 4-4" />
+    </svg>
+  );
+}
+
+// Borders for the contact options: one column on phones, 2x2 on tablets, one row on wide screens.
+const optionCells = [
+  'sm:pr-6',
+  'border-t border-white/10 sm:border-l sm:border-t-0 sm:pl-6 xl:pr-6',
+  'border-t border-white/10 sm:pr-6 xl:border-l xl:border-t-0 xl:pl-6',
+  'border-t border-white/10 sm:border-l sm:pl-6 xl:border-t-0',
+];
+
+function ContactOptions() {
+  const cell = (i: number) => cn('flex flex-col gap-2 py-7 sm:py-8', optionCells[i]);
+  const linkClass = 'inline-flex min-h-[3rem] items-center text-lg font-semibold text-gold-400 [overflow-wrap:anywhere] hover:text-white';
+
+  return (
+    <div className="mt-14 border-t border-white/10">
+      <h2 className="sr-only">Ways to reach us</h2>
+      <ul className="grid sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1.2fr_1fr]">
+        <li className={cell(0)}>
+          <h3 className="text-lg font-bold text-white">Schedule a call</h3>
+          <p className="text-navy-300">Free 30-minute call, Monday to Sunday, 9 AM to 9 PM EST.</p>
+          <div className="mt-auto pt-3">
+            <CalendlyButton text="Schedule a free call" />
+          </div>
+        </li>
+        <li className={cell(1)}>
+          <h3 className="text-lg font-bold text-white">Call us</h3>
+          <p className="text-navy-300">Rather talk now? Speak with our team.</p>
+          <div className="mt-auto pt-3">
+            <a href={PHONE_HREF} className={linkClass}>
+              {PHONE_DISPLAY}
+            </a>
+          </div>
+        </li>
+        <li className={cell(2)}>
+          <h3 className="text-lg font-bold text-white">Email us</h3>
+          <p className="text-navy-300">We reply within 2 hours during business hours.</p>
+          <div className="mt-auto pt-3">
+            <a href={`mailto:${CONTACT_EMAIL}`} className={linkClass}>
+              {CONTACT_EMAIL}
+            </a>
+          </div>
+        </li>
+        <li className={cell(3)}>
+          <h3 className="text-lg font-bold text-white">Live chat</h3>
+          <p className="text-navy-300">Chat with our support team, available 24/7.</p>
+          <div className="mt-auto pt-3">
+            <button type="button" onClick={openLiveChat} className={buttonClasses('outline-light')}>
+              Start a chat
+            </button>
+          </div>
+        </li>
+      </ul>
+    </div>
+  );
+}
 
 export default function Contact() {
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    company: '',
-    website: '',
-    monthlyVolume: '',
-    currentProcessor: '',
-    message: '',
-    contactReason: ''
-  });
-
+  const [formData, setFormData] = useState<FormData>(emptyForm);
+  const [errors, setErrors] = useState<Errors>({});
+  const [failedAttempts, setFailedAttempts] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const contactReasons = [
-    'Get a Custom Quote 💰',
-    'I need Help Setting Up 🛠️',
-    'Technical Support 🆘',
-    'I want to Partner with You 🤝',
-    'Just Curious About Services 🤔',
-    'My Current Processor Stinks 😤'
-  ];
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const successRef = useRef<HTMLDivElement>(null);
+  const sendErrorRef = useRef<HTMLDivElement>(null);
+  // Set when the pointer goes down on "Send message". The submit checks every field anyway, and an error
+  // appearing on blur would push the button down mid-click so the click never lands.
+  const submitPressRef = useRef(false);
 
-  const volumeRanges = [
-    'Just getting started (Under $5K)',
-    'Small but mighty ($5K - $25K)',
-    'Growing business ($25K - $50K)',
-    'Solid performer ($50K - $100K)',
-    'High volume player ($100K - $500K)',
-    'Big league (Over $500K) 🏆'
-  ];
+  const errorList = checkedFields.filter((field) => errors[field]).map((field) => [field, errors[field] as string] as const);
+  const showSummary = failedAttempts > 0 && errorList.length > 0;
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  // Move focus to the error summary after a submit with problems, so keyboard and screen reader users hear it.
+  useEffect(() => {
+    if (failedAttempts > 0) summaryRef.current?.focus();
+  }, [failedAttempts]);
+
+  // If the insert fails, take focus to the explanation (the disabled button would otherwise drop it).
+  useEffect(() => {
+    if (submitError) sendErrorRef.current?.focus();
+  }, [submitError]);
+
+  // Bring the confirmation into view: the submit button sits at the bottom of a long form.
+  useEffect(() => {
+    if (!isSubmitted) return;
+    successRef.current?.scrollIntoView({ block: 'start' });
+    successRef.current?.focus({ preventScroll: true });
+  }, [isSubmitted]);
+
+  const handleInputChange = (field: Field, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    // Once a field shows an error, re-check it as they type so the message clears as soon as it's fixed.
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: validateField(field, value) }));
   };
 
-  const getFormProgress = () => {
-    const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'contactReason'];
-    const filledRequiredFields = requiredFields.filter(field => formData[field as keyof typeof formData]).length;
-    const optionalFields = ['company', 'website', 'monthlyVolume', 'currentProcessor', 'message'];
-    const filledOptionalFields = optionalFields.filter(field => formData[field as keyof typeof formData]).length;
-    
-    const totalFields = requiredFields.length + optionalFields.length;
-    const filledFields = filledRequiredFields + filledOptionalFields;
-    
-    return Math.round((filledFields / totalFields) * 100);
+  const handleBlur = (field: Field) => {
+    if (submitPressRef.current) {
+      submitPressRef.current = false;
+      return;
+    }
+    // Don't flag empty required fields just because someone tabbed past them; that waits for submit.
+    if (!formData[field].trim() && !errors[field]) return;
+    setErrors((prev) => ({ ...prev, [field]: validateField(field, formData[field]) }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const fieldProps = (field: Field, hint?: boolean) => {
+    const id = `contact-${field}`;
+    const describedBy = [hint && `${id}-hint`, errors[field] && `${id}-error`].filter(Boolean).join(' ');
+    return {
+      id,
+      name: field,
+      value: formData[field],
+      onBlur: () => handleBlur(field),
+      'aria-invalid': errors[field] ? true : undefined,
+      'aria-describedby': describedBy || undefined,
+      className: cn(controlBase, errors[field] ? controlInvalid : controlValid),
+    };
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    submitPressRef.current = false;
+    if (isSubmitting) return;
+
+    const nextErrors: Errors = {};
+    for (const field of checkedFields) {
+      const message = validateField(field, formData[field]);
+      if (message) nextErrors[field] = message;
+    }
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      setSubmitError(null);
+      setFailedAttempts((n) => n + 1);
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitError(null);
-    
+
     try {
       const contactMessage: Omit<ContactMessage, 'id' | 'created_at'> = {
         first_name: formData.firstName,
@@ -74,13 +352,10 @@ export default function Contact() {
         contact_reason: formData.contactReason,
         monthly_volume: formData.monthlyVolume || undefined,
         current_processor: formData.currentProcessor || undefined,
-        message: formData.message || undefined
+        message: formData.message || undefined,
       };
 
-      const { data, error } = await supabase
-        .from('contact_messages')
-        .insert([contactMessage])
-        .select();
+      const { data, error } = await supabase.from('contact_messages').insert([contactMessage]).select();
 
       if (error) {
         throw error;
@@ -96,388 +371,337 @@ export default function Contact() {
     }
   };
 
-  const contactMethods = [
-    {
-      title: 'Schedule Meeting',
-      description: 'Book a personalized consultation',
-      value: 'Book Now',
-      link: 'https://calendly.com/save-zummitpayments/30min?month=2025-08',
-      icon: (
-        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
-        </svg>
-      ),
-      available: 'Available 24/7'
-    },
-    {
-      title: 'Email Us',
-      description: 'Send us a detailed message',
-      value: 'Save.zummitpayments@gmail.com',
-      link: 'mailto:Save.zummitpayments@gmail.com',
-      icon: (
-        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-        </svg>
-      ),
-      available: 'Response within 2 hours'
-    },
-    {
-      title: 'Live Chat',
-      description: 'Chat with our support team',
-      value: 'Start Chat',
-      link: '#',
-      icon: (
-        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd"/>
-        </svg>
-      ),
-      available: 'Available 24/7'
-    }
-  ];
+  const resetForm = () => {
+    setFormData(emptyForm);
+    setErrors({});
+    setFailedAttempts(0);
+    setSubmitError(null);
+    setIsSubmitted(false);
+  };
 
+  const jumpToField = (e: MouseEvent<HTMLAnchorElement>, field: Field) => {
+    e.preventDefault();
+    focusField(`contact-${field}`);
+  };
 
+  const firstName = formData.firstName.trim();
 
-  if (isSubmitted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-dark via-primary-blue to-luxury-purple">
-        <div className="max-w-2xl mx-auto px-4 text-center">
-          <div className="glass rounded-3xl p-12">
-            <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-8">
-              <svg className="w-10 h-10 text-black" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-              </svg>
-            </div>
-            <h1 className="text-4xl font-bold text-white mb-4">Thank You!</h1>
-            <p className="text-xl text-neutral-300 mb-8">
-              We&apos;ve received your message and will get back to you within 2 hours.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={() => {
-                  setIsSubmitted(false);
-                  setFormData({
-                    firstName: '',
-                    lastName: '',
-                    email: '',
-                    phone: '',
-                    company: '',
-                    website: '',
-                    monthlyVolume: '',
-                    currentProcessor: '',
-                    message: '',
-                    contactReason: ''
-                  });
-                }}
-                className="glass border border-white/20 text-white hover:bg-white/10 px-6 py-3 rounded-full font-semibold transition-all duration-300"
-              >
-                Send Another Message
-              </button>
+  return (
+    <>
+      {!isSubmitted && <FloatingLeadCapture pageName="contact" />}
+
+      <PageHero
+        title="Talk to our team"
+        lead="Ask us about fees, equipment or getting set up. We'll review your current setup and show you where you can save, from zero processing fees to low, transparent rates."
+      >
+        <ContactOptions />
+      </PageHero>
+
+      <Section tone="paper" id="message" aria-labelledby="message-title">
+        {isSubmitted ? (
+          <div
+            ref={successRef}
+            tabIndex={-1}
+            aria-labelledby="message-title"
+            className="max-w-3xl scroll-mt-28 rounded-2xl border border-line bg-white p-7 focus:outline-none sm:p-12"
+          >
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gold-400 text-navy-950">
+              <CheckIcon className="h-6 w-6" />
+            </span>
+            <h2 id="message-title" className="mt-6 font-wide text-3xl font-extrabold text-navy-900 sm:text-4xl">
+              {firstName ? `Thank you, ${firstName}.` : 'Thank you.'} We got your message.
+            </h2>
+            <p className="mt-4 max-w-prose text-lg text-muted">Here is what happens next.</p>
+            <ul className="mt-6 space-y-3">
+              <li className="flex items-start gap-3">
+                <CheckIcon className="mt-0.5 text-navy-700" />
+                <span>We get back to you within 2 hours during business hours.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckIcon className="mt-0.5 text-navy-700" />
+                <span>If you asked for a quote, you&apos;ll have your custom quote within 24 hours.</span>
+              </li>
+            </ul>
+
+            <div className="mt-10 border-t border-line pt-8">
+              <h3 className="text-xl font-bold text-navy-900">Want to talk sooner?</h3>
+              <p className="mt-2 max-w-prose text-muted">
+                Book a free 30-minute call. Calls available Monday to Sunday, 9 AM to 9 PM EST.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <CalendlyButton text="Schedule a free call" size="lg" />
+                <button type="button" onClick={resetForm} className={buttonClasses('outline-dark', 'lg')}>
+                  Send another message
+                </button>
+              </div>
               <Link
                 href="/"
-                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black px-6 py-3 rounded-full font-bold transition-all duration-300"
+                className="mt-6 inline-block font-semibold text-navy-700 underline-offset-4 hover:text-navy-900 hover:underline"
               >
-                Back to Home
+                Back to home
               </Link>
             </div>
           </div>
-        </div>
-      </div>
-    );
-  }
+        ) : (
+          <>
+            <SectionHeading
+              id="message-title"
+              title="Send us a message"
+              intro="Tell us about your business and what you need help with."
+            />
 
-  return (
-    <div className="min-h-screen">
-      <Header />
-      <FloatingLeadCapture pageName="contact" />
-      
-      <section className="relative py-20 pt-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-dark via-primary-blue to-luxury-purple opacity-90"></div>
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full mix-blend-multiply filter blur-xl animate-breathe"></div>
-          <div className="absolute top-40 right-10 w-72 h-72 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-xl animate-breathe-delay"></div>
-        </div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 animate-fade-in">
-            <span className="inline-block animate-slide-up">Get In</span>
-            <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent animate-slide-up-delay">
-              Touch
-            </span>
-          </h1>
-          
-          <p className="text-xl md:text-2xl text-neutral-200 mb-12 max-w-4xl mx-auto">
-            Ready to start saving on payment processing? Our team of experts is here to help you 
-            find the perfect solution for your business.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {contactMethods.map((method, index) => (
-              <a
-                key={index}
-                href={method.link}
-                className="glass rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 hover:scale-105 group"
+            <div className="mt-12 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:gap-14 xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] xl:gap-20">
+              <form
+                onSubmit={handleSubmit}
+                noValidate
+                aria-labelledby="message-title"
+                className="rounded-2xl border border-line bg-white p-6 sm:p-10"
               >
-                <div className="text-yellow-400 mb-6 flex justify-center group-hover:scale-110 transition-transform duration-300">
-                  {method.icon}
-                </div>
-                <h3 className="text-xl font-bold text-white mb-2">{method.title}</h3>
-                <p className="text-neutral-400 mb-4">{method.description}</p>
-                <p className="text-yellow-400 font-semibold text-lg mb-2">{method.value}</p>
-                <p className="text-neutral-500 text-sm">{method.available}</p>
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
+                <p className="text-sm text-muted">
+                  Fields marked with <span className="text-red-700">*</span> are required.
+                </p>
 
-      <section className="py-20 bg-gradient-to-b from-neutral-900 to-black">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-            
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-4xl font-bold text-white">Send Us a Message</h2>
-                <div className="text-right">
-                  <div className="text-sm text-neutral-400 mb-1">Form Progress</div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-24 h-2 bg-white/10 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 transition-all duration-300 ease-out"
-                        style={{ width: `${getFormProgress()}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-yellow-400 font-semibold text-sm">{getFormProgress()}%</span>
-                  </div>
-                </div>
-              </div>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="relative">
-                    <label className="block text-neutral-300 font-medium mb-2 flex items-center">
-                      <span className="mr-2">👋</span> First Name *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.firstName}
-                      onChange={(e) => handleInputChange('firstName', e.target.value)}
-                      className="w-full p-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all duration-300 hover:bg-white/15"
-                      placeholder="What should we call you?"
-                    />
-                  </div>
-                  <div className="relative">
-                    <label className="block text-neutral-300 font-medium mb-2 flex items-center">
-                      <span className="mr-2">👤</span> Last Name *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.lastName}
-                      onChange={(e) => handleInputChange('lastName', e.target.value)}
-                      className="w-full p-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all duration-300 hover:bg-white/15"
-                      placeholder="Your family name"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="relative">
-                    <label className="block text-neutral-300 font-medium mb-2 flex items-center">
-                      <span className="mr-2">📧</span> Email Address *
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      className="w-full p-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all duration-300 hover:bg-white/15"
-                      placeholder="your@awesome-business.com"
-                    />
-                  </div>
-                  <div className="relative">
-                    <label className="block text-neutral-300 font-medium mb-2 flex items-center">
-                      <span className="mr-2">📞</span> Phone Number *
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      className="w-full p-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all duration-300 hover:bg-white/15"
-                      placeholder="(555) 123-4567"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="relative">
-                    <label className="block text-neutral-300 font-medium mb-2 flex items-center">
-                      <span className="mr-2">🏢</span> Company Name
-                      <span className="ml-2 text-xs text-neutral-400">(optional)</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.company}
-                      onChange={(e) => handleInputChange('company', e.target.value)}
-                      className="w-full p-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all duration-300 hover:bg-white/15"
-                      placeholder="Your amazing company"
-                    />
-                  </div>
-                  <div className="relative">
-                    <label className="block text-neutral-300 font-medium mb-2 flex items-center">
-                      <span className="mr-2">🌐</span> Website
-                      <span className="ml-2 text-xs text-neutral-400">(optional)</span>
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.website}
-                      onChange={(e) => handleInputChange('website', e.target.value)}
-                      className="w-full p-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all duration-300 hover:bg-white/15"
-                      placeholder="https://yourwebsite.com"
-                    />
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <label className="block text-neutral-300 font-medium mb-2 flex items-center">
-                    <span className="mr-2">🎯</span> What brings you here? *
-                  </label>
-                  <select
-                    required
-                    value={formData.contactReason}
-                    onChange={(e) => handleInputChange('contactReason', e.target.value)}
-                    className="w-full p-4 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all duration-300 hover:bg-white/15"
+                {showSummary && (
+                  <div
+                    ref={summaryRef}
+                    tabIndex={-1}
+                    aria-labelledby="error-summary-title"
+                    className="mt-6 scroll-mt-28 rounded-xl border-2 border-red-700 bg-red-50 p-5"
                   >
-                    <option value="" className="bg-neutral-800">Choose your adventure...</option>
-                    {contactReasons.map((reason) => (
-                      <option key={reason} value={reason} className="bg-neutral-800">{reason}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="relative">
-                  <label className="block text-neutral-300 font-medium mb-2 flex items-center">
-                    <span className="mr-2">💰</span> Monthly Processing Volume
-                    <span className="ml-2 text-xs text-neutral-400">(helps us quote better)</span>
-                  </label>
-                  <select
-                    value={formData.monthlyVolume}
-                    onChange={(e) => handleInputChange('monthlyVolume', e.target.value)}
-                    className="w-full p-4 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all duration-300 hover:bg-white/15"
-                  >
-                    <option value="" className="bg-neutral-800">Pick your range...</option>
-                    {volumeRanges.map((range) => (
-                      <option key={range} value={range} className="bg-neutral-800">{range}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="relative">
-                  <label className="block text-neutral-300 font-medium mb-2 flex items-center">
-                    <span className="mr-2">🏦</span> Current Payment Processor
-                    <span className="ml-2 text-xs text-neutral-400">(who&apos;s taking your money?)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.currentProcessor}
-                    onChange={(e) => handleInputChange('currentProcessor', e.target.value)}
-                    className="w-full p-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all duration-300 hover:bg-white/15"
-                    placeholder="Square, Stripe, PayPal, or that other guy..."
-                  />
-                </div>
-
-                <div className="relative">
-                  <label className="block text-neutral-300 font-medium mb-2 flex items-center">
-                    <span className="mr-2">💬</span> Tell us your story
-                    <span className="ml-2 text-xs text-neutral-400">(optional, but we love stories!)</span>
-                  </label>
-                  <textarea
-                    rows={5}
-                    value={formData.message}
-                    onChange={(e) => handleInputChange('message', e.target.value)}
-                    className="w-full p-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all duration-300 resize-none hover:bg-white/15"
-                    placeholder="Share your business dreams, payment processing nightmares, or just say hi! We&apos;re all ears... 👂"
-                  />
-                </div>
-
-                {submitError && (
-                  <div className="p-4 rounded-xl bg-red-500/20 border border-red-500/30 text-red-300 flex items-center space-x-2">
-                    <span>⚠️</span>
-                    <span>{submitError}</span>
+                    <h3 id="error-summary-title" className="font-bold text-red-800">
+                      {errorList.length === 1
+                        ? 'Check 1 field before sending'
+                        : `Check ${errorList.length} fields before sending`}
+                    </h3>
+                    <ul className="mt-3 space-y-1.5">
+                      {errorList.map(([field, message]) => (
+                        <li key={field}>
+                          <a
+                            href={`#contact-${field}`}
+                            onClick={(e) => jumpToField(e, field)}
+                            className="font-medium text-red-800 underline underline-offset-4 hover:text-red-900"
+                          >
+                            {message}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 transform relative overflow-hidden ${
-                    isSubmitting
-                      ? 'bg-neutral-600 text-neutral-400 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black hover:scale-105 shadow-lg shadow-yellow-400/25 group'
-                  }`}
-                >
-                  <span className="relative z-10">
-                    {isSubmitting ? (
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="w-5 h-5 border-2 border-neutral-400 border-t-transparent rounded-full animate-spin"></div>
-                        <span>Sending your message...</span>
+                <fieldset className="mt-8 min-w-0">
+                  <legend className="font-wide text-xl font-bold text-navy-900">About you</legend>
+                  <div className="mt-6 grid gap-6 sm:grid-cols-2">
+                    <FormField id="contact-firstName" label="First name" required error={errors.firstName}>
+                      <input
+                        type="text"
+                        autoComplete="given-name"
+                        required
+                        {...fieldProps('firstName')}
+                        onChange={(e) => handleInputChange('firstName', e.target.value)}
+                      />
+                    </FormField>
+                    <FormField id="contact-lastName" label="Last name" required error={errors.lastName}>
+                      <input
+                        type="text"
+                        autoComplete="family-name"
+                        required
+                        {...fieldProps('lastName')}
+                        onChange={(e) => handleInputChange('lastName', e.target.value)}
+                      />
+                    </FormField>
+                    <FormField id="contact-email" label="Email address" required error={errors.email}>
+                      <input
+                        type="email"
+                        inputMode="email"
+                        autoComplete="email"
+                        spellCheck={false}
+                        required
+                        placeholder="name@yourbusiness.com"
+                        {...fieldProps('email')}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                      />
+                    </FormField>
+                    <FormField id="contact-phone" label="Phone number" required error={errors.phone}>
+                      <input
+                        type="tel"
+                        inputMode="tel"
+                        autoComplete="tel"
+                        required
+                        placeholder="(555) 123-4567"
+                        {...fieldProps('phone')}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                      />
+                    </FormField>
+                  </div>
+                </fieldset>
+
+                <fieldset className="mt-10 min-w-0 border-t border-line pt-8">
+                  <legend className="float-left w-full font-wide text-xl font-bold text-navy-900">About your business</legend>
+                  <div className="clear-both grid gap-6 pt-6 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                    <FormField id="contact-company" label="Business name" error={errors.company}>
+                      <input
+                        type="text"
+                        autoComplete="organization"
+                        {...fieldProps('company')}
+                        onChange={(e) => handleInputChange('company', e.target.value)}
+                      />
+                    </FormField>
+                    <FormField id="contact-website" label="Website" error={errors.website}>
+                      <input
+                        type="url"
+                        inputMode="url"
+                        autoComplete="url"
+                        spellCheck={false}
+                        placeholder="yourbusiness.com"
+                        {...fieldProps('website')}
+                        onChange={(e) => handleInputChange('website', e.target.value)}
+                      />
+                    </FormField>
+                    <FormField
+                      id="contact-monthlyVolume"
+                      label="Monthly processing volume"
+                      hint="Helps us prepare a more accurate quote."
+                    >
+                      <div className="relative">
+                        <select
+                          {...fieldProps('monthlyVolume', true)}
+                          className={cn(fieldProps('monthlyVolume').className, 'appearance-none pr-11')}
+                          onChange={(e) => handleInputChange('monthlyVolume', e.target.value)}
+                        >
+                          <option value="">Choose a range</option>
+                          {volumeRanges.map((range) => (
+                            <option key={range.value} value={range.value}>
+                              {range.label}
+                            </option>
+                          ))}
+                        </select>
+                        <SelectChevron />
                       </div>
-                    ) : (
-                      <span className="flex items-center justify-center space-x-2">
-                        <span>Send Message</span>
-                        <span className="transform group-hover:translate-x-1 transition-transform duration-300">🚀</span>
-                      </span>
+                    </FormField>
+                    <FormField
+                      id="contact-currentProcessor"
+                      label="Current payment processor"
+                      hint="Who processes your card payments today."
+                    >
+                      <input
+                        type="text"
+                        autoComplete="off"
+                        placeholder="For example, Square or Stripe"
+                        {...fieldProps('currentProcessor', true)}
+                        onChange={(e) => handleInputChange('currentProcessor', e.target.value)}
+                      />
+                    </FormField>
+                  </div>
+                </fieldset>
+
+                <fieldset className="mt-10 min-w-0 border-t border-line pt-8">
+                  <legend className="float-left w-full font-wide text-xl font-bold text-navy-900">Your message</legend>
+                  <div className="clear-both grid gap-6 pt-6">
+                    <FormField id="contact-contactReason" label="What can we help you with?" required error={errors.contactReason}>
+                      <div className="relative">
+                        <select
+                          required
+                          {...fieldProps('contactReason')}
+                          className={cn(fieldProps('contactReason').className, 'appearance-none pr-11')}
+                          onChange={(e) => handleInputChange('contactReason', e.target.value)}
+                        >
+                          <option value="">Choose one</option>
+                          {contactReasons.map((reason) => (
+                            <option key={reason.value} value={reason.value}>
+                              {reason.label}
+                            </option>
+                          ))}
+                        </select>
+                        <SelectChevron />
+                      </div>
+                    </FormField>
+                    <FormField id="contact-message" label="Message">
+                      <textarea
+                        rows={5}
+                        placeholder="For example, what you sell, how your customers pay, or questions about your fees."
+                        {...fieldProps('message')}
+                        className={cn(fieldProps('message').className, 'min-h-[8rem] resize-y')}
+                        onChange={(e) => handleInputChange('message', e.target.value)}
+                      />
+                    </FormField>
+                  </div>
+                </fieldset>
+
+                {submitError && (
+                  <div
+                    ref={sendErrorRef}
+                    tabIndex={-1}
+                    role="alert"
+                    aria-labelledby="send-error-title"
+                    className="mt-8 scroll-mt-28 rounded-xl border border-red-700/40 bg-red-50 p-5 text-red-800"
+                  >
+                    <p id="send-error-title" className="font-bold">
+                      Your message wasn&apos;t sent.
+                    </p>
+                    <p className="mt-1">{submitError}</p>
+                    <p className="mt-1">
+                      You can also email us at{' '}
+                      <a href={`mailto:${CONTACT_EMAIL}`} className="font-semibold underline underline-offset-4">
+                        {CONTACT_EMAIL}
+                      </a>
+                      .
+                    </p>
+                  </div>
+                )}
+
+                <div className="mt-10 flex flex-col gap-4 border-t border-line pt-8 sm:flex-row sm:items-center">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    onPointerDown={() => {
+                      submitPressRef.current = true;
+                    }}
+                    className={buttonClasses('primary', 'lg', 'w-full sm:w-auto')}
+                  >
+                    {isSubmitting && (
+                      <span
+                        className="h-4 w-4 animate-spin rounded-full border-2 border-navy-950/25 border-t-navy-950"
+                        aria-hidden="true"
+                      />
                     )}
-                  </span>
-                  {!isSubmitting && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-300 to-orange-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  )}
-                </button>
-              </form>
-            </div>
-
-            <div className="space-y-8">
-
-              <div className="glass rounded-2xl p-8">
-                <h3 className="text-2xl font-bold text-white mb-6">Quick Response Guarantee</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <svg className="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                    </svg>
-                    <span className="text-neutral-300">Response within 2 hours during business hours</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <svg className="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                    </svg>
-                    <span className="text-neutral-300">Custom quote delivered within 24 hours</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <svg className="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                    </svg>
-                    <span className="text-neutral-300">No pushy sales tactics, just honest advice</span>
-                  </div>
+                    {isSubmitting ? 'Sending…' : 'Send message'}
+                  </button>
+                  <p className="text-sm text-muted">We reply within 2 hours during business hours.</p>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+                <p role="status" className="sr-only">
+                  {isSubmitting ? 'Sending your message…' : ''}
+                </p>
+              </form>
 
-      <section className="py-20 bg-gradient-to-r from-yellow-400 to-orange-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-black mb-6">
-            Ready to Save Money?
-          </h2>
-          <p className="text-xl text-black/80 mb-12 max-w-3xl mx-auto">
-            Join other businesses already saving significant amounts of money on their payment processing costs.
-          </p>
-          
-        </div>
-      </section>
-    </div>
+              <aside aria-labelledby="guarantee-title" className="lg:sticky lg:top-28 lg:self-start">
+                <h3 id="guarantee-title" className="font-wide text-xl font-bold text-navy-900">
+                  Quick response guarantee
+                </h3>
+                <ul className="mt-5 space-y-4">
+                  {responsePromises.map((item) => (
+                    <li key={item} className="flex items-start gap-3">
+                      <CheckIcon className="mt-0.5 text-navy-700" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-8 border-t border-line pt-6">
+                  <p className="font-semibold text-ink">Rather talk it through?</p>
+                  <p className="mt-1 text-muted">
+                    Call{' '}
+                    <a href={PHONE_HREF} className="font-semibold text-navy-700 underline-offset-4 hover:underline">
+                      {PHONE_DISPLAY}
+                    </a>{' '}
+                    or book a <span className="whitespace-nowrap">free 30-minute call</span>.
+                  </p>
+                  <CalendlyButton text="Schedule a free call" variant="outline-dark" size="sm" className="mt-4" />
+                </div>
+              </aside>
+            </div>
+          </>
+        )}
+      </Section>
+    </>
   );
 }
