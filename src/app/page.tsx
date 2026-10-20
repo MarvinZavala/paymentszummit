@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { CreditCard, Headset, Mail, MonitorSmartphone, Phone, ShieldCheck, ShoppingCart, UserRound, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -10,6 +11,8 @@ import { Container, Section, SectionHeading } from '@/components/ui/Layout';
 import OnboardingTimeline from '@/components/sections/OnboardingTimeline';
 import CustomerStories from '@/components/sections/CustomerStories';
 import FaqList from '@/components/sections/FaqList';
+import IndustryGrid from '@/components/sections/IndustryGrid';
+import { IconTile } from '@/components/ui/Visuals';
 import { faqData } from '@/lib/faq';
 import { CONTACT_EMAIL, PHONE_DISPLAY, PHONE_HREF } from '@/lib/site';
 
@@ -22,59 +25,42 @@ const stats = [
   { value: '99.9%', label: 'System uptime' },
 ];
 
-const services = [
+const services: { title: string; description: string; href: string; icon: LucideIcon }[] = [
   {
     title: 'Credit card processing',
     description: 'Accept all major credit cards with a secure, fast processing system.',
     href: '/credit-card-processing',
+    icon: CreditCard,
   },
   {
     title: 'Point of sale systems',
     description: 'Modern POS solutions for retail, restaurants and service businesses.',
     href: '/portfolio',
+    icon: MonitorSmartphone,
   },
   {
     title: 'E-commerce integration',
     description: 'Online payment processing for your website or app.',
     href: '/products#ecommerce',
+    icon: ShoppingCart,
   },
   {
     title: 'Secure transactions',
     description: 'Bank-level security with PCI DSS compliance and fraud protection.',
     href: '/credit-card-processing',
+    icon: ShieldCheck,
   },
   {
     title: '24/7 support',
     description: 'Round-the-clock customer support from payment processing experts.',
     href: '/support',
+    icon: Headset,
   },
   {
     title: 'Account management',
     description: 'A dedicated account manager who helps you optimize your payment processing.',
     href: '/support/account',
-  },
-];
-
-const industries = [
-  {
-    title: 'Retail stores',
-    description: 'Brick-and-mortar shops.',
-    features: ['In-person payments', 'POS integration', 'Inventory management'],
-  },
-  {
-    title: 'Restaurants',
-    description: 'Built for food service.',
-    features: ['Table-side payments', 'Tip management', 'Kitchen integration'],
-  },
-  {
-    title: 'E-commerce',
-    description: 'Online payment processing.',
-    features: ['Shopping cart integration', 'Recurring billing', 'Mobile optimization'],
-  },
-  {
-    title: 'Service businesses',
-    description: 'Get paid for your services.',
-    features: ['Mobile payments', 'Invoicing', 'Appointment booking'],
+    icon: UserRound,
   },
 ];
 
@@ -142,7 +128,7 @@ export default function Home() {
           <SectionHeading
             id="switching-title"
             title="From first call to taking payments in 5 days"
-            intro="Switching processors sounds like a hassle. Here is exactly what happens after you say yes."
+            intro="Switching is simpler than it sounds. Here’s what happens after you say yes."
           />
           <OnboardingTimeline className="mt-14" />
         </Section>
@@ -172,9 +158,10 @@ export default function Home() {
                 <li key={service.title}>
                   <Link
                     href={service.href}
-                    className="group flex items-start justify-between gap-6 py-6 transition-colors hover:bg-white sm:px-4"
+                    className="group flex items-start gap-5 py-5 transition-colors hover:bg-white sm:px-4"
                   >
-                    <span>
+                    <IconTile icon={service.icon} />
+                    <span className="flex-1">
                       <span className="block text-xl font-bold text-navy-900">{service.title}</span>
                       <span className="mt-1 block text-muted">{service.description}</span>
                     </span>
@@ -208,22 +195,7 @@ export default function Home() {
             title="Set up for the way your business gets paid"
             intro="Whether customers pay at the counter, at the table, online or on the job."
           />
-          <ul className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
-            {industries.map((industry) => (
-              <li key={industry.title} className="bg-white p-7">
-                <h3 className="text-xl font-bold text-navy-900">{industry.title}</h3>
-                <p className="mt-1 text-muted">{industry.description}</p>
-                <ul className="mt-5 space-y-2">
-                  {industry.features.map((feature) => (
-                    <li key={feature} className="flex gap-2.5 text-[0.95rem]">
-                      <CheckIcon className="mt-0.5 h-4 w-4 text-navy-700" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ul>
+          <IndustryGrid className="mt-14" />
         </Section>
 
         {/* Questions before booking */}
@@ -237,6 +209,29 @@ export default function Home() {
                 See all questions
                 <ArrowIcon />
               </Link>
+              <div className="mt-10 rounded-2xl bg-navy-900 p-6 text-white sm:p-7">
+                <div className="flex items-center gap-4">
+                  <IconTile icon={Headset} tone="dark" />
+                  <div>
+                    <p className="text-lg font-bold">Still have a question?</p>
+                    <p className="text-navy-200">Our support team is here 24/7.</p>
+                  </div>
+                </div>
+                <ul className="mt-5 space-y-2.5 border-t border-white/10 pt-5">
+                  <li>
+                    <a href={PHONE_HREF} className="flex items-center gap-3 font-semibold hover:text-gold-400">
+                      <Phone className="h-5 w-5 text-gold-400" strokeWidth={1.75} aria-hidden="true" />
+                      {PHONE_DISPLAY}
+                    </a>
+                  </li>
+                  <li>
+                    <a href={`mailto:${CONTACT_EMAIL}`} className="flex items-center gap-3 break-all font-semibold hover:text-gold-400">
+                      <Mail className="h-5 w-5 shrink-0 text-gold-400" strokeWidth={1.75} aria-hidden="true" />
+                      {CONTACT_EMAIL}
+                    </a>
+                  </li>
+                </ul>
+              </div>
             </SectionHeading>
             <FaqList faqs={homeFaqs} />
           </div>

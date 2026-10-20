@@ -41,7 +41,7 @@ This is a Next.js 15.4.5 application for Zummit Payments, a merchant services pl
 
 - **Tailwind CSS v3** with brand tokens in `tailwind.config.js`: `navy-*` (page tops, dark sections, footer), `gold-*` (primary buttons and the one highlight only), `ink`, `muted`, `paper`, `line`.
 - **Typography**: Archivo (variable width) for everything; add `font-wide` / `font-extra-wide` to headings and big numbers. IBM Plex Mono is only for the home page receipt (`src/components/home/Receipt.tsx`).
-- **Shared building blocks**: `src/components/ui/Layout.tsx` (`Container`, `Section`, `SectionHeading`, `PageHero`), `src/components/ui/Button.tsx` (`ButtonLink`, `buttonClasses`, icons), `src/components/sections/*` (`OnboardingTimeline`, `CustomerStories`, `FaqList`), `CalendlyWidget.tsx` (`CalendlyButton`, `CalendlyEmbed`, inline calendar).
+- **Shared building blocks**: `src/components/ui/Layout.tsx` (`Container`, `Section`, `SectionHeading`, `PageHero`), `src/components/ui/Button.tsx` (`ButtonLink`, `buttonClasses`, icons), `src/components/ui/Visuals.tsx` (`IconTile` for lucide-react icons, `PaymentCards` illustration), `src/components/sections/*` (`OnboardingTimeline`, `CustomerStories`, `IndustryGrid`, `FaqList`), `CalendlyWidget.tsx` (`CalendlyButton`, `CalendlyEmbed`, inline calendar).
 - **Page structure**: marketing routes get `Header` + `<main>` + `Footer` from their `layout.tsx` (never from `page.tsx`). Inner pages start with `PageHero`. The `Footer` ends every page with the closing call to action, so pages don't add their own CTA band. `/get-quote` and `/thank-you` are focused funnels with a slim bar and no nav.
 - **Content rule**: only use facts that already exist on the site. Contact details, Calendly URL and phone live in `src/lib/site.ts`.
 

@@ -3,22 +3,35 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useId, useState } from 'react';
+import {
+  BadgeDollarSign,
+  Globe,
+  LayoutGrid,
+  MonitorSmartphone,
+  Printer,
+  ShieldCheck,
+  Smartphone,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react';
 import FloatingLeadCapture from '@/components/FloatingLeadCapture';
 import { CalendlyButton } from '@/components/CalendlyWidget';
 import { ArrowIcon, ButtonLink, CheckIcon } from '@/components/ui/Button';
 import { PageHero, Section, SectionHeading } from '@/components/ui/Layout';
 import CustomerStories from '@/components/sections/CustomerStories';
+import OnboardingTimeline from '@/components/sections/OnboardingTimeline';
+import { IconTile } from '@/components/ui/Visuals';
 import { CONTACT_EMAIL } from '@/lib/site';
 import { cn } from '@/lib/utils';
 
 type CategoryId = 'pos' | 'mobile' | 'gateway' | 'printers';
 
-const categories: { id: 'all' | CategoryId; name: string }[] = [
-  { id: 'all', name: 'All equipment' },
-  { id: 'pos', name: 'POS systems' },
-  { id: 'mobile', name: 'Mobile solutions' },
-  { id: 'gateway', name: 'Payment gateway' },
-  { id: 'printers', name: 'Printers and accessories' },
+const categories: { id: 'all' | CategoryId; name: string; icon: LucideIcon }[] = [
+  { id: 'all', name: 'All equipment', icon: LayoutGrid },
+  { id: 'pos', name: 'POS systems', icon: MonitorSmartphone },
+  { id: 'mobile', name: 'Mobile solutions', icon: Smartphone },
+  { id: 'gateway', name: 'Payment gateway', icon: Globe },
+  { id: 'printers', name: 'Printers and accessories', icon: Printer },
 ];
 
 type Product = {
@@ -51,7 +64,7 @@ const products: Product[] = [
     id: 'clover-go',
     category: 'mobile',
     name: 'Clover Go',
-    description: 'A compact card reader that turns your smartphone or tablet into a complete POS system.',
+    description: 'A compact card reader that turns your phone or tablet into a complete POS.',
     bestFor: 'Small businesses, mobile vendors and service providers',
     features: [
       'Works with your smartphone or tablet',
@@ -76,7 +89,7 @@ const products: Product[] = [
     id: 'clover-flex',
     category: 'mobile',
     name: 'Clover Flex',
-    description: 'A handheld POS that goes wherever your business goes. Take payments anywhere over WiFi or cellular.',
+    description: 'A handheld POS that takes payments anywhere over WiFi or cellular.',
     bestFor: 'Food trucks, pop-up shops and delivery services',
     features: [
       'WiFi and 4G connectivity',
@@ -100,8 +113,8 @@ const products: Product[] = [
     id: 'complete-pos',
     category: 'pos',
     name: 'Complete POS setup',
-    description: 'A full merchant setup with integrated payment processing and business management tools.',
-    bestFor: 'New businesses, merchants upgrading their system and multi-location businesses',
+    description: 'Hardware, payment processing and business management tools in one setup.',
+    bestFor: 'New businesses, upgrades and multiple locations',
     features: [
       'Complete hardware bundle',
       'Training and support included',
@@ -123,7 +136,7 @@ const products: Product[] = [
     id: 'enterprise-pos',
     category: 'pos',
     name: 'Enterprise POS system',
-    description: 'For high-volume merchants, with advanced analytics and management across several locations.',
+    description: 'For high-volume merchants that run several locations.',
     bestFor: 'Large retailers, chain stores and enterprises',
     features: [
       'Multi-location management',
@@ -146,7 +159,7 @@ const products: Product[] = [
     id: 'premium-setup',
     category: 'pos',
     name: 'Premium merchant setup',
-    description: 'Premium merchant services and high-performance POS systems for growing businesses.',
+    description: 'A high-performance POS system for growing businesses.',
     bestFor: 'Growing businesses, retail chains and franchises',
     features: [
       'Premium hardware package',
@@ -170,7 +183,7 @@ const products: Product[] = [
     id: 'kitchen-printers',
     category: 'printers',
     name: 'Kitchen printers',
-    description: 'Receipt and kitchen printers built for busy, high-volume restaurants.',
+    description: 'Receipt and kitchen printers built for busy restaurants.',
     bestFor: 'Restaurants, food service and quick service',
     features: [
       'Impact and thermal options',
@@ -192,8 +205,7 @@ const products: Product[] = [
     id: 'payment-gateway',
     category: 'gateway',
     name: 'Payment gateway',
-    description:
-      'Secure online payments for e-commerce and remote invoicing. Send professional invoices and collect payments from anywhere. Now with cryptocurrency payments.',
+    description: 'Send invoices and take secure online payments from anywhere, now including cryptocurrency.',
     bestFor: 'E-commerce, service providers and consultants',
     features: [
       'Online invoices',
@@ -215,10 +227,14 @@ const products: Product[] = [
   },
 ];
 
-const included = [
-  { title: 'Professional installation', description: 'Expert setup and training.' },
-  { title: 'Warranty and support', description: 'Full warranty coverage.' },
-  { title: 'Competitive pricing', description: 'Rates tailored to your business volume and industry.' },
+const included: { title: string; description: string; icon: LucideIcon }[] = [
+  { title: 'Professional installation', description: 'Expert setup and training.', icon: Wrench },
+  { title: 'Warranty and support', description: 'Full warranty coverage.', icon: ShieldCheck },
+  {
+    title: 'Competitive pricing',
+    description: 'Zero processing fees for qualifying merchants, or rates tailored to your volume and industry.',
+    icon: BadgeDollarSign,
+  },
 ];
 
 const VISIBLE_FEATURES = 3;
@@ -328,7 +344,7 @@ export default function Portfolio() {
 
       <PageHero
         title="POS systems and card readers, set up for you"
-        lead="Clover point of sale systems, mobile card readers, kitchen printers and an online payment gateway. Our experts handle installation, setup and training."
+        lead="Clover POS systems, card readers, kitchen printers and an online payment gateway. We handle installation, setup and training."
         actions={
           <>
             <CalendlyButton text="Schedule a free call" size="lg" />
@@ -339,15 +355,15 @@ export default function Portfolio() {
           </>
         }
         aside={
-          // Desktop only: on phones the catalog right below shows the same devices, so get people there sooner.
-          <div className="ml-auto hidden max-w-md overflow-hidden rounded-2xl bg-white lg:block">
+          <div className="max-w-md overflow-hidden rounded-2xl bg-white lg:ml-auto">
             <Image
               src="/multiplemerchant.PNG"
               alt="Clover Station, Clover Mini and Clover Flex point of sale devices"
               width={1000}
               height={1000}
-              sizes="448px"
+              sizes="(min-width: 1024px) 448px, 100vw"
               className="h-auto w-full"
+              priority
             />
           </div>
         }
@@ -358,7 +374,7 @@ export default function Portfolio() {
         <SectionHeading
           id="catalog-title"
           title="Find the right setup"
-          intro="From a compact card reader for your phone to a POS system that runs several locations."
+          intro="From a card reader for your phone to a POS for several locations."
         />
 
         <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -367,6 +383,7 @@ export default function Portfolio() {
               const count =
                 category.id === 'all' ? products.length : products.filter((p) => p.category === category.id).length;
               const active = activeCategory === category.id;
+              const Icon = category.icon;
               return (
                 <button
                   key={category.id}
@@ -375,12 +392,17 @@ export default function Portfolio() {
                   aria-controls="equipment-list"
                   onClick={() => setActiveCategory(category.id)}
                   className={cn(
-                    'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[0.95rem] font-semibold transition-colors duration-150',
+                    'inline-flex items-center gap-2 rounded-full border py-2 pl-3.5 pr-4 text-[0.95rem] font-semibold transition-colors duration-150',
                     active
                       ? 'border-navy-900 bg-navy-900 text-white'
                       : 'border-line bg-white text-navy-900 hover:border-navy-900'
                   )}
                 >
+                  <Icon
+                    aria-hidden="true"
+                    strokeWidth={1.75}
+                    className={cn('h-[1.15rem] w-[1.15rem]', active ? 'text-gold-400' : 'text-navy-700')}
+                  />
                   {category.name}
                   <span className={cn('text-sm font-normal', active ? 'text-navy-200' : 'text-muted')}>{count}</span>
                 </button>
@@ -415,51 +437,52 @@ export default function Portfolio() {
         </ul>
       </Section>
 
+      {/* What comes with the equipment */}
+      <Section tone="white" aria-labelledby="included-title">
+        {/* Phones: heading, list, links. Desktop: heading and links on the left, list on the right. */}
+        <div className="grid gap-y-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:grid-rows-[auto_1fr] lg:gap-x-20 lg:gap-y-8">
+          <SectionHeading
+            id="included-title"
+            title="Included with your equipment"
+            intro="We install and set up your new POS system for you."
+          />
+          <ul className="divide-y divide-line border-y border-line lg:col-start-2 lg:row-span-2 lg:row-start-1">
+            {included.map((item) => (
+              <li key={item.title} className="flex items-start gap-5 py-6">
+                <IconTile icon={item.icon} />
+                <div>
+                  <h3 className="text-xl font-bold text-navy-900">{item.title}</h3>
+                  <p className="mt-1 max-w-prose text-muted">{item.description}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <div className="flex flex-col items-start gap-3 lg:col-start-1 lg:row-start-2">
+            <Link href="/contact" className="inline-flex items-center gap-2 font-semibold text-navy-700 hover:text-navy-900">
+              Ask about installation
+              <ArrowIcon />
+            </Link>
+            <a
+              href={`mailto:${CONTACT_EMAIL}`}
+              className="inline-flex items-center gap-2 font-semibold text-navy-700 hover:text-navy-900"
+            >
+              Email us for an equipment quote
+              <ArrowIcon />
+            </a>
+          </div>
+        </div>
+      </Section>
+
       {/* Proof: two of the installations, with the equipment they run */}
       <Section tone="navy" aria-labelledby="stories-title">
-        <SectionHeading
-          id="stories-title"
-          tone="dark"
-          title="See it at work in local businesses"
-          intro="A food truck running a Clover Station with kitchen printers, and a construction company that invoices clients through our payment gateway."
-        />
+        <SectionHeading id="stories-title" tone="dark" title="See it at work in local businesses" />
         <CustomerStories className="mt-14" />
       </Section>
 
-      {/* What comes with the equipment (replaces the old yellow installation band) */}
-      <Section tone="white" aria-labelledby="included-title">
-        <SectionHeading
-          id="included-title"
-          title="Included with your equipment"
-          intro="We install and set up your new POS system. Our experts handle everything."
-        />
-        <dl className="mt-12 grid border-y border-line sm:grid-cols-3">
-          {included.map((item, i) => (
-            <div
-              key={item.title}
-              className={cn('py-7', i > 0 && 'border-t border-line sm:border-l sm:border-t-0 sm:pl-8', i < 2 && 'sm:pr-8')}
-            >
-              <dt className="flex items-center gap-2.5 text-lg font-bold text-navy-900">
-                <CheckIcon className="text-navy-700" />
-                {item.title}
-              </dt>
-              <dd className="mt-1 pl-[1.875rem] text-muted">{item.description}</dd>
-            </div>
-          ))}
-        </dl>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-8">
-          <Link href="/contact" className="inline-flex items-center gap-2 font-semibold text-navy-700 hover:text-navy-900">
-            Ask about installation
-            <ArrowIcon />
-          </Link>
-          <a
-            href={`mailto:${CONTACT_EMAIL}`}
-            className="inline-flex items-center gap-2 font-semibold text-navy-700 hover:text-navy-900"
-          >
-            Email us for an equipment quote
-            <ArrowIcon />
-          </a>
-        </div>
+      {/* When the equipment arrives */}
+      <Section tone="paper" aria-labelledby="delivery-title">
+        <SectionHeading id="delivery-title" title="Delivered and ready in 5 days" />
+        <OnboardingTimeline className="mt-14" />
       </Section>
     </>
   );

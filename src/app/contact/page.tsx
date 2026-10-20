@@ -1,11 +1,24 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
+import {
+  BadgeDollarSign,
+  Calendar,
+  Check,
+  Mail,
+  MessageCircle,
+  Phone,
+  Users,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
 import FloatingLeadCapture from '@/components/FloatingLeadCapture';
 import { CalendlyButton } from '@/components/CalendlyWidget';
-import { buttonClasses, CheckIcon } from '@/components/ui/Button';
+import { buttonClasses } from '@/components/ui/Button';
 import { PageHero, Section, SectionHeading } from '@/components/ui/Layout';
+import { IconTile } from '@/components/ui/Visuals';
 import { supabase, type ContactMessage } from '@/lib/supabase';
 import { CONTACT_EMAIL, PHONE_DISPLAY, PHONE_HREF } from '@/lib/site';
 import { cn } from '@/lib/utils';
@@ -58,10 +71,16 @@ const volumeRanges = [
   { value: 'Big league (Over $500K) 🏆', label: 'Over $500K' },
 ];
 
-const responsePromises = [
-  'Reply within 2 hours during business hours',
-  'Custom quote delivered within 24 hours',
-  'No pushy sales tactics, just honest advice',
+const responsePromises: { text: string; icon: LucideIcon }[] = [
+  { text: 'Reply within 2 hours during business hours', icon: Zap },
+  { text: 'Custom quote delivered within 24 hours', icon: BadgeDollarSign },
+  { text: 'No pushy sales tactics, just honest advice', icon: Users },
+];
+
+// What happens after the message is sent (same promises, shown on the confirmation).
+const afterSending: { text: string; icon: LucideIcon }[] = [
+  { text: 'We get back to you within 2 hours during business hours.', icon: Zap },
+  { text: 'If you asked for a quote, you’ll have it within 24 hours.', icon: BadgeDollarSign },
 ];
 
 // Built with the constructor so the `u` flag compiles under the ES2017 target.
@@ -209,50 +228,87 @@ const optionCells = [
   'border-t border-white/10 sm:border-l sm:pl-6 xl:border-t-0',
 ];
 
+function ContactOption({
+  index,
+  icon,
+  title,
+  text,
+  children,
+}: {
+  index: number;
+  icon: LucideIcon;
+  title: string;
+  text: string;
+  children: ReactNode;
+}) {
+  return (
+    <li className={cn('flex flex-col py-7 sm:py-8', optionCells[index])}>
+      <div className="flex items-center gap-4">
+        <IconTile icon={icon} tone="dark" />
+        <h3 className="text-lg font-bold text-white">{title}</h3>
+      </div>
+      <p className="mt-3 text-navy-300">{text}</p>
+      <div className="mt-auto pt-4">{children}</div>
+    </li>
+  );
+}
+
 function ContactOptions() {
-  const cell = (i: number) => cn('flex flex-col gap-2 py-7 sm:py-8', optionCells[i]);
   const linkClass = 'inline-flex min-h-[3rem] items-center text-lg font-semibold text-gold-400 [overflow-wrap:anywhere] hover:text-white';
 
   return (
-    <div className="mt-14 border-t border-white/10">
+    // On phones the hero photo is hidden but its grid row still adds a gap, so the top margin is smaller there.
+    <div className="mt-2 border-t border-white/10 lg:mt-14">
       <h2 className="sr-only">Ways to reach us</h2>
       <ul className="grid sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1.2fr_1fr]">
-        <li className={cell(0)}>
-          <h3 className="text-lg font-bold text-white">Schedule a call</h3>
-          <p className="text-navy-300">Free 30-minute call, Monday to Sunday, 9 AM to 9 PM EST.</p>
-          <div className="mt-auto pt-3">
-            <CalendlyButton text="Schedule a free call" />
-          </div>
-        </li>
-        <li className={cell(1)}>
-          <h3 className="text-lg font-bold text-white">Call us</h3>
-          <p className="text-navy-300">Rather talk now? Speak with our team.</p>
-          <div className="mt-auto pt-3">
-            <a href={PHONE_HREF} className={linkClass}>
-              {PHONE_DISPLAY}
-            </a>
-          </div>
-        </li>
-        <li className={cell(2)}>
-          <h3 className="text-lg font-bold text-white">Email us</h3>
-          <p className="text-navy-300">We reply within 2 hours during business hours.</p>
-          <div className="mt-auto pt-3">
-            <a href={`mailto:${CONTACT_EMAIL}`} className={linkClass}>
-              {CONTACT_EMAIL}
-            </a>
-          </div>
-        </li>
-        <li className={cell(3)}>
-          <h3 className="text-lg font-bold text-white">Live chat</h3>
-          <p className="text-navy-300">Chat with our support team, available 24/7.</p>
-          <div className="mt-auto pt-3">
-            <button type="button" onClick={openLiveChat} className={buttonClasses('outline-light')}>
-              Start a chat
-            </button>
-          </div>
-        </li>
+        <ContactOption index={0} icon={Calendar} title="Schedule a call" text="Free 30-minute call, Monday to Sunday, 9 AM to 9 PM EST.">
+          <CalendlyButton text="Schedule a free call" />
+        </ContactOption>
+        <ContactOption index={1} icon={Phone} title="Call us" text="Rather talk now? Speak with our team.">
+          <a href={PHONE_HREF} className={linkClass}>
+            {PHONE_DISPLAY}
+          </a>
+        </ContactOption>
+        <ContactOption index={2} icon={Mail} title="Email us" text="We reply within 2 hours during business hours.">
+          <a href={`mailto:${CONTACT_EMAIL}`} className={linkClass}>
+            {CONTACT_EMAIL}
+          </a>
+        </ContactOption>
+        <ContactOption index={3} icon={MessageCircle} title="Live chat" text="Chat with our support team, available 24/7.">
+          <button type="button" onClick={openLiveChat} className={buttonClasses('outline-light')}>
+            Start a chat
+          </button>
+        </ContactOption>
       </ul>
     </div>
+  );
+}
+
+/** The hero's one picture: the counter setup people ask us about. Desktop only; phones go straight to the options. */
+function HeroPhoto() {
+  return (
+    <div className="ml-auto hidden max-w-md overflow-hidden rounded-2xl bg-white p-4 lg:block">
+      <Image
+        src="/posmeerchant.JPG"
+        alt="Clover point of sale counter setup with a cash drawer, barcode scanner and handheld card terminal"
+        width={1320}
+        height={800}
+        priority
+        className="h-auto w-full"
+        sizes="448px"
+      />
+    </div>
+  );
+}
+
+/** Big gold check for the confirmation. */
+function SuccessMark() {
+  return (
+    <span aria-hidden="true" className="grid w-fit rounded-full border border-gold-500/60 p-2">
+      <span className="grid h-16 w-16 place-items-center rounded-full bg-gold-400 text-navy-950 sm:h-20 sm:w-20">
+        <Check className="h-8 w-8 sm:h-10 sm:w-10" strokeWidth={2.5} />
+      </span>
+    </span>
   );
 }
 
@@ -392,7 +448,8 @@ export default function Contact() {
 
       <PageHero
         title="Talk to our team"
-        lead="Ask us about fees, equipment or getting set up. We'll review your current setup and show you where you can save, from zero processing fees to low, transparent rates."
+        lead="Ask about fees, equipment or getting set up. We’ll show you where you can save, from zero processing fees to low, transparent rates."
+        aside={<HeroPhoto />}
       >
         <ContactOptions />
       </PageHero>
@@ -405,29 +462,22 @@ export default function Contact() {
             aria-labelledby="message-title"
             className="max-w-3xl scroll-mt-28 rounded-2xl border border-line bg-white p-7 focus:outline-none sm:p-12"
           >
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gold-400 text-navy-950">
-              <CheckIcon className="h-6 w-6" />
-            </span>
-            <h2 id="message-title" className="mt-6 font-wide text-3xl font-extrabold text-navy-900 sm:text-4xl">
+            <SuccessMark />
+            <h2 id="message-title" className="mt-8 font-wide text-3xl font-extrabold text-navy-900 sm:text-4xl">
               {firstName ? `Thank you, ${firstName}.` : 'Thank you.'} We got your message.
             </h2>
-            <p className="mt-4 max-w-prose text-lg text-muted">Here is what happens next.</p>
-            <ul className="mt-6 space-y-3">
-              <li className="flex items-start gap-3">
-                <CheckIcon className="mt-0.5 text-navy-700" />
-                <span>We get back to you within 2 hours during business hours.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckIcon className="mt-0.5 text-navy-700" />
-                <span>If you asked for a quote, you&apos;ll have your custom quote within 24 hours.</span>
-              </li>
+            <ul className="mt-8 space-y-4">
+              {afterSending.map((item) => (
+                <li key={item.text} className="flex items-center gap-4">
+                  <IconTile icon={item.icon} size="sm" />
+                  <span>{item.text}</span>
+                </li>
+              ))}
             </ul>
 
             <div className="mt-10 border-t border-line pt-8">
               <h3 className="text-xl font-bold text-navy-900">Want to talk sooner?</h3>
-              <p className="mt-2 max-w-prose text-muted">
-                Book a free 30-minute call. Calls available Monday to Sunday, 9 AM to 9 PM EST.
-              </p>
+              <p className="mt-2 max-w-prose text-muted">Book a free 30-minute call, Monday to Sunday, 9 AM to 9 PM EST.</p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <CalendlyButton text="Schedule a free call" size="lg" />
                 <button type="button" onClick={resetForm} className={buttonClasses('outline-dark', 'lg')}>
@@ -444,11 +494,7 @@ export default function Contact() {
           </div>
         ) : (
           <>
-            <SectionHeading
-              id="message-title"
-              title="Send us a message"
-              intro="Tell us about your business and what you need help with."
-            />
+            <SectionHeading id="message-title" title="Send us a message" intro="Tell us about your business and what you need." />
 
             <div className="mt-12 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:gap-14 xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] xl:gap-20">
               <form
@@ -650,7 +696,7 @@ export default function Contact() {
                   </div>
                 )}
 
-                <div className="mt-10 flex flex-col gap-4 border-t border-line pt-8 sm:flex-row sm:items-center">
+                <div className="mt-10 border-t border-line pt-8">
                   <button
                     type="submit"
                     disabled={isSubmitting}
@@ -667,7 +713,6 @@ export default function Contact() {
                     )}
                     {isSubmitting ? 'Sending…' : 'Send message'}
                   </button>
-                  <p className="text-sm text-muted">We reply within 2 hours during business hours.</p>
                 </div>
                 <p role="status" className="sr-only">
                   {isSubmitting ? 'Sending your message…' : ''}
@@ -678,11 +723,11 @@ export default function Contact() {
                 <h3 id="guarantee-title" className="font-wide text-xl font-bold text-navy-900">
                   Quick response guarantee
                 </h3>
-                <ul className="mt-5 space-y-4">
+                <ul className="mt-6 space-y-5">
                   {responsePromises.map((item) => (
-                    <li key={item} className="flex items-start gap-3">
-                      <CheckIcon className="mt-0.5 text-navy-700" />
-                      <span>{item}</span>
+                    <li key={item.text} className="flex items-center gap-4">
+                      <IconTile icon={item.icon} size="sm" />
+                      <span>{item.text}</span>
                     </li>
                   ))}
                 </ul>

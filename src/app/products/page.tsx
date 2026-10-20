@@ -1,22 +1,52 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import {
+  BadgeDollarSign,
+  Banknote,
+  BarChart3,
+  Bell,
+  Boxes,
+  CreditCard,
+  FileText,
+  Globe,
+  Headset,
+  Lock,
+  Mail,
+  MapPin,
+  MonitorSmartphone,
+  Nfc,
+  Repeat,
+  ShieldCheck,
+  ShoppingCart,
+  Smartphone,
+  Users,
+  Wallet,
+  type LucideIcon,
+} from 'lucide-react';
 import FloatingLeadCapture from '@/components/FloatingLeadCapture';
 import { CalendlyButton } from '@/components/CalendlyWidget';
 import { ArrowIcon, ButtonLink, CheckIcon } from '@/components/ui/Button';
 import { PageHero, Section, SectionHeading } from '@/components/ui/Layout';
+import { IconTile, PaymentCards } from '@/components/ui/Visuals';
 import OnboardingTimeline from '@/components/sections/OnboardingTimeline';
 import { cn } from '@/lib/utils';
+
+type Photo = { src: string; alt: string; width: number; height: number; fit: 'contain' | 'cover' };
 
 type Product = {
   /** Also the tab's element id, so /products#pos-systems opens on that product. */
   id: string;
   tab: string;
+  icon: LucideIcon;
   title: string;
   summary: string;
   audience: string;
-  features: { name: string; description: string }[];
+  /** Product photo for the panel. Without one, the panel draws the invoicing flow instead. */
+  photo?: Photo;
+  features: { name: string; description: string; icon: LucideIcon }[];
   benefits: string[];
   link?: { href: string; label: string };
 };
@@ -25,18 +55,26 @@ const products: Product[] = [
   {
     id: 'credit-card',
     tab: 'Credit card processing',
+    icon: CreditCard,
     title: 'Credit card processing',
-    summary:
-      'Accept all major credit and debit cards at competitive rates tailored to your business volume and industry.',
+    summary: 'Accept all major credit and debit cards at rates tailored to your volume and industry.',
     audience: 'Any business that takes card payments in person, online or over the phone.',
+    photo: {
+      src: '/merchant2.PNG',
+      alt: 'Clover Flex handheld card terminal',
+      width: 887,
+      height: 661,
+      fit: 'contain',
+    },
     features: [
-      { name: 'All major cards', description: 'Visa, Mastercard, American Express, Discover and more.' },
-      { name: 'Fees from 0%', description: 'Processing fees start at 0% for qualifying merchants.' },
+      { name: 'All major cards', description: 'Visa, Mastercard, American Express, Discover and more.', icon: CreditCard },
+      { name: 'Fees from 0%', description: 'For qualifying merchants.', icon: BadgeDollarSign },
       {
         name: 'Fast funding',
-        description: 'Funds arrive the next business day. Same-day funding is available for qualifying merchants.',
+        description: 'Next business day. Same-day for qualifying merchants.',
+        icon: Banknote,
       },
-      { name: 'Advanced security', description: 'End-to-end encryption and tokenization protect every payment.' },
+      { name: 'Advanced security', description: 'End-to-end encryption and tokenization on every payment.', icon: Lock },
     ],
     benefits: [
       'Accept payments in person, online and over the phone',
@@ -50,14 +88,22 @@ const products: Product[] = [
   {
     id: 'pos-systems',
     tab: 'POS systems',
+    icon: MonitorSmartphone,
     title: 'Point of sale systems',
-    summary: 'Modern point of sale systems that handle payments, inventory, customers and sales reports.',
+    summary: 'Modern POS systems that handle payments, inventory, customers and sales reports.',
     audience: 'Retail stores, restaurants and service businesses.',
+    photo: {
+      src: '/posmeerchant.JPG',
+      alt: 'Clover POS station with cash drawer, barcode scanner and card terminals',
+      width: 1320,
+      height: 800,
+      fit: 'contain',
+    },
     features: [
-      { name: 'All-in-one terminal', description: 'Process payments, manage inventory and track sales.' },
-      { name: 'Inventory management', description: 'Track stock levels, set alerts and manage suppliers.' },
-      { name: 'Customer management', description: 'Build customer profiles and loyalty programs.' },
-      { name: 'Multiple locations', description: 'Manage every location from a single dashboard.' },
+      { name: 'All-in-one terminal', description: 'Process payments, manage inventory and track sales.', icon: MonitorSmartphone },
+      { name: 'Inventory management', description: 'Track stock levels, set alerts and manage suppliers.', icon: Boxes },
+      { name: 'Customer management', description: 'Build customer profiles and loyalty programs.', icon: Users },
+      { name: 'Multiple locations', description: 'Manage every location from a single dashboard.', icon: MapPin },
     ],
     benefits: [
       'Cloud-based, so you can reach it from anywhere',
@@ -71,14 +117,22 @@ const products: Product[] = [
   {
     id: 'ecommerce',
     tab: 'E-commerce',
+    icon: ShoppingCart,
     title: 'E-commerce payments',
     summary: 'Online payment processing for your website or app.',
     audience: 'Businesses that sell online, through a website or an app.',
+    photo: {
+      src: '/gateway.JPG',
+      alt: 'Illustration of online payments on a laptop next to card terminals',
+      width: 1024,
+      height: 1024,
+      fit: 'cover',
+    },
     features: [
-      { name: 'Payment gateway', description: 'A secure API for processing online payments.' },
-      { name: 'Shopping cart integration', description: 'Connects easily with popular platforms.' },
-      { name: 'Mobile-friendly checkout', description: 'A responsive checkout that works on every device.' },
-      { name: 'Subscription billing', description: 'Recurring payments processed automatically.' },
+      { name: 'Payment gateway', description: 'A secure API for processing online payments.', icon: Globe },
+      { name: 'Shopping cart integration', description: 'Connects easily with popular platforms.', icon: ShoppingCart },
+      { name: 'Mobile-friendly checkout', description: 'A responsive checkout that works on every device.', icon: Smartphone },
+      { name: 'Subscription billing', description: 'Recurring payments processed automatically.', icon: Repeat },
     ],
     benefits: [
       'More than 40 payment methods supported worldwide',
@@ -91,14 +145,22 @@ const products: Product[] = [
   {
     id: 'mobile',
     tab: 'Mobile payments',
+    icon: Smartphone,
     title: 'Mobile payments',
     summary: 'Accept payments anywhere with our mobile card readers and apps.',
     audience: 'Service businesses and anyone who gets paid on the go.',
+    photo: {
+      src: '/merchantclover2.PNG',
+      alt: 'Clover card reader, Clover Flex, Clover Mini and Clover Station devices',
+      width: 1024,
+      height: 490,
+      fit: 'contain',
+    },
     features: [
-      { name: 'Mobile card reader', description: 'Accepts chip, swipe and contactless payments.' },
-      { name: 'Digital wallets', description: 'Apple Pay, Google Pay and Samsung Pay.' },
-      { name: 'Invoices and estimates', description: 'Send professional invoices and get paid.' },
-      { name: 'Real-time reporting', description: 'Track sales and run your business on the go.' },
+      { name: 'Mobile card reader', description: 'Accepts chip, swipe and contactless payments.', icon: Nfc },
+      { name: 'Digital wallets', description: 'Apple Pay, Google Pay and Samsung Pay.', icon: Wallet },
+      { name: 'Invoices and estimates', description: 'Send professional invoices and get paid.', icon: FileText },
+      { name: 'Real-time reporting', description: 'Track sales and run your business on the go.', icon: BarChart3 },
     ],
     benefits: [
       'No monthly fees for basic mobile processing',
@@ -112,14 +174,15 @@ const products: Product[] = [
   {
     id: 'gateway',
     tab: 'Payment gateway',
+    icon: Globe,
     title: 'Payment gateway',
     summary: 'Secure online payments and invoicing, powered by Centz.',
     audience: 'Businesses that bill customers remotely, by invoice, email or the web.',
     features: [
-      { name: 'Online invoicing', description: 'Create and send professional invoices with payment links.' },
-      { name: 'Remote payment collection', description: 'Get paid from anywhere, by email or on the web.' },
-      { name: 'Secure processing', description: 'Enterprise-grade security with end-to-end encryption.' },
-      { name: 'Real-time notifications', description: 'Instant alerts for payments and transaction updates.' },
+      { name: 'Online invoicing', description: 'Professional invoices with payment links.', icon: FileText },
+      { name: 'Remote payment collection', description: 'Get paid from anywhere, by email or on the web.', icon: Mail },
+      { name: 'Secure processing', description: 'Enterprise-grade security with end-to-end encryption.', icon: Lock },
+      { name: 'Real-time notifications', description: 'Instant alerts for payments and transaction updates.', icon: Bell },
     ],
     benefits: [
       'Professional invoice templates with your branding',
@@ -132,20 +195,61 @@ const products: Product[] = [
   },
 ];
 
-const reasons = [
+const reasons: { title: string; description: string; icon: LucideIcon }[] = [
   {
     title: 'Low or high risk',
-    description: 'Competitive rates and transparent pricing that help you save on processing fees.',
+    description: 'Competitive, transparent rates that help you save on processing fees.',
+    icon: BadgeDollarSign,
   },
   {
     title: 'Bank-level security',
     description: 'PCI DSS compliant, with end-to-end encryption and advanced fraud protection.',
+    icon: ShieldCheck,
   },
   {
     title: '24/7 support',
-    description: 'Round-the-clock help from payment processing experts who care about your success.',
+    description: 'Round-the-clock help from payment processing experts.',
+    icon: Headset,
   },
 ];
+
+// The gateway has no product photo, so its panel shows how invoicing works, using only its own features.
+const invoiceSteps: { label: string; icon: LucideIcon }[] = [
+  { label: 'Create an invoice', icon: FileText },
+  { label: 'Send it by email', icon: Mail },
+  { label: 'Get paid online', icon: Globe },
+];
+
+function InvoiceFlow() {
+  return (
+    <div
+      role="img"
+      aria-label="Online invoicing: create an invoice, send it by email, get paid online"
+      className="grid h-full place-items-center px-6"
+    >
+      <ol className="relative grid w-full max-w-md grid-cols-3">
+        <span aria-hidden="true" className="absolute left-[16.7%] right-[16.7%] top-8 border-t-2 border-dashed border-line" />
+        {invoiceSteps.map((step, i) => {
+          const last = i === invoiceSteps.length - 1;
+          const Icon = step.icon;
+          return (
+            <li key={step.label} className="relative flex flex-col items-center text-center">
+              <span
+                className={cn(
+                  'grid h-16 w-16 place-items-center rounded-2xl',
+                  last ? 'bg-gold-400 text-navy-950' : 'bg-navy-900 text-gold-400'
+                )}
+              >
+                <Icon className="h-8 w-8" strokeWidth={1.75} />
+              </span>
+              <span className="mt-3 text-sm font-semibold text-navy-900">{step.label}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
 
 export default function Products() {
   const [activeId, setActiveId] = useState(products[0].id);
@@ -184,7 +288,7 @@ export default function Products() {
 
       <PageHero
         title="Payment solutions built for your business"
-        lead="Take payments in your store, online, on the go or by invoice. Processing fees start at 0% for qualifying merchants, with competitive rates tailored to your volume and industry for everyone else."
+        lead="Take payments in your store, online, on the go or by invoice. Fees from 0% for qualifying merchants, competitive rates for everyone else."
         actions={
           <>
             <CalendlyButton text="Schedule a free call" size="lg" />
@@ -193,12 +297,14 @@ export default function Products() {
             </ButtonLink>
           </>
         }
+        aside={<PaymentCards className="lg:mr-0 lg:mb-2" />}
       >
         {/* Folder tabs sit on the bottom edge of the hero; the selected one opens into the white panel below. */}
         <div className="-mx-5 -mb-16 mt-14 overflow-x-auto px-5 [scrollbar-width:none] sm:-mx-8 sm:-mb-20 sm:mt-16 sm:px-8 [&::-webkit-scrollbar]:hidden">
           <div role="tablist" aria-label="Payment solutions" className="flex w-max gap-1.5">
             {products.map((product, index) => {
               const selected = product.id === activeId;
+              const Icon = product.icon;
               return (
                 <button
                   key={product.id}
@@ -217,12 +323,17 @@ export default function Products() {
                   }}
                   onKeyDown={(event) => onTabKeyDown(event, index)}
                   className={cn(
-                    'scroll-mt-28 whitespace-nowrap rounded-t-xl px-4 py-3.5 text-[0.95rem] font-semibold transition-colors focus-visible:[outline-offset:-5px] sm:px-6 sm:py-4 sm:text-base',
+                    'inline-flex scroll-mt-28 items-center gap-2.5 whitespace-nowrap rounded-t-xl px-4 py-3.5 text-[0.95rem] font-semibold transition-colors focus-visible:[outline-offset:-5px] sm:px-6 sm:py-4 sm:text-base',
                     selected
                       ? 'bg-white text-navy-900'
                       : 'bg-white/[0.07] text-navy-200 hover:bg-white/[0.14] hover:text-white'
                   )}
                 >
+                  <Icon
+                    aria-hidden="true"
+                    strokeWidth={1.75}
+                    className={cn('h-5 w-5 shrink-0', selected ? 'text-navy-700' : 'text-gold-400')}
+                  />
                   {product.tab}
                 </button>
               );
@@ -231,16 +342,16 @@ export default function Products() {
         </div>
       </PageHero>
 
-      {/* The selected product: what it is, who it's for, what you get, and what to do next */}
+      {/* The selected product. Desktop: words left, picture and benefits right. Phones: the picture comes second. */}
       <Section tone="white" className="pt-14 sm:pt-20" aria-labelledby="product-title">
         <div
           role="tabpanel"
           id="product-panel"
           aria-labelledby={active.id}
           tabIndex={0}
-          className="grid gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-16 xl:gap-24"
+          className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-x-16 lg:gap-y-14 xl:gap-x-24"
         >
-          <div>
+          <div className="lg:col-start-1 lg:row-start-1">
             <h2 id="product-title" className="font-wide text-3xl font-extrabold text-navy-900 sm:text-[2.6rem]">
               {active.title}
             </h2>
@@ -249,19 +360,51 @@ export default function Products() {
               <dt className="text-sm font-semibold text-navy-700">Who it’s for</dt>
               <dd className="mt-1 text-ink">{active.audience}</dd>
             </dl>
-
-            <h3 className="mt-12 text-lg font-bold text-navy-900">Features</h3>
-            <dl className="mt-4 grid border-t border-line sm:grid-cols-2 sm:gap-x-10">
-              {active.features.map((feature) => (
-                <div key={feature.name} className="border-b border-line py-5">
-                  <dt className="font-bold text-navy-900">{feature.name}</dt>
-                  <dd className="mt-1 text-muted">{feature.description}</dd>
-                </div>
-              ))}
-            </dl>
           </div>
 
-          <div className="self-start rounded-2xl border border-line bg-paper p-7 sm:p-9">
+          {/* Phones: the box takes the photo's own shape, so wide photos don't float in empty space. */}
+          <div
+            style={
+              active.photo
+                ? ({ '--photo-ratio': `${active.photo.width} / ${active.photo.height}` } as CSSProperties)
+                : undefined
+            }
+            className={cn(
+              'relative w-full max-h-72 overflow-hidden rounded-2xl border border-line bg-white lg:col-start-2 lg:row-start-1 lg:aspect-auto lg:h-auto lg:max-h-none lg:min-h-[17rem]',
+              active.photo ? 'aspect-[var(--photo-ratio)]' : 'h-60 sm:h-72'
+            )}
+          >
+            {active.photo ? (
+              <Image
+                key={active.photo.src}
+                src={active.photo.src}
+                alt={active.photo.alt}
+                fill
+                priority={active.id === products[0].id}
+                sizes="(min-width: 1024px) 40vw, 100vw"
+                className={active.photo.fit === 'cover' ? 'object-cover' : 'object-contain p-4 sm:p-8'}
+              />
+            ) : (
+              <InvoiceFlow />
+            )}
+          </div>
+
+          <div className="lg:col-start-1 lg:row-start-2">
+            <h3 className="text-lg font-bold text-navy-900">Features</h3>
+            <ul className="mt-6 grid gap-x-10 gap-y-7 sm:grid-cols-2">
+              {active.features.map((feature) => (
+                <li key={feature.name} className="flex items-start gap-4">
+                  <IconTile icon={feature.icon} size="sm" />
+                  <div>
+                    <p className="font-bold text-navy-900">{feature.name}</p>
+                    <p className="mt-1 text-muted">{feature.description}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-2xl border border-line bg-paper p-7 sm:p-9 lg:col-start-2 lg:row-start-2">
             <h3 className="text-lg font-bold text-navy-900">Key benefits</h3>
             <ul className="mt-5 space-y-3">
               {active.benefits.map((benefit) => (
@@ -271,33 +414,29 @@ export default function Products() {
                 </li>
               ))}
             </ul>
+          </div>
 
-            <div className="mt-8 border-t border-line pt-8">
-              <h3 className="text-lg font-bold text-navy-900">Next step</h3>
-              <p className="mt-2 text-muted">
-                Book a free 30-minute call. We’ll review your current setup and show you where you can save on fees.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <CalendlyButton text="Schedule a free call" />
-                <ButtonLink href="/get-quote" variant="outline-dark">
-                  Get a free quote
-                </ButtonLink>
-              </div>
-              {active.link && (
-                <Link
-                  href={active.link.href}
-                  className="mt-6 inline-flex items-center gap-2 font-semibold text-navy-700 hover:text-navy-900"
-                >
-                  {active.link.label}
-                  <ArrowIcon />
-                </Link>
-              )}
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-6 border-t border-line pt-10 lg:col-span-2 lg:row-start-3">
+            <div className="flex flex-wrap gap-3">
+              <CalendlyButton text="Schedule a free call" />
+              <ButtonLink href="/get-quote" variant="outline-dark">
+                Get a free quote
+              </ButtonLink>
             </div>
+            {active.link && (
+              <Link
+                href={active.link.href}
+                className="inline-flex items-center gap-2 font-semibold text-navy-700 hover:text-navy-900"
+              >
+                {active.link.label}
+                <ArrowIcon />
+              </Link>
+            )}
           </div>
         </div>
       </Section>
 
-      {/* Why Zummit: a short spec list rather than a row of icon cards */}
+      {/* Why Zummit: three short rows, each with its icon */}
       <Section tone="paper" aria-labelledby="why-title">
         <div className="grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-20">
           <SectionHeading id="why-title" title="Why business owners choose Zummit Payments">
@@ -309,24 +448,23 @@ export default function Products() {
               <ArrowIcon />
             </Link>
           </SectionHeading>
-          <dl className="divide-y divide-line border-y border-line">
+          <ul className="divide-y divide-line border-y border-line">
             {reasons.map((reason) => (
-              <div key={reason.title} className="grid gap-2 py-7 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)] sm:gap-8">
-                <dt className="font-wide text-xl font-bold text-navy-900">{reason.title}</dt>
-                <dd className="text-lg text-muted">{reason.description}</dd>
-              </div>
+              <li key={reason.title} className="flex items-start gap-5 py-7">
+                <IconTile icon={reason.icon} />
+                <div>
+                  <h3 className="font-wide text-xl font-bold text-navy-900">{reason.title}</h3>
+                  <p className="mt-1 text-lg text-muted">{reason.description}</p>
+                </div>
+              </li>
             ))}
-          </dl>
+          </ul>
         </div>
       </Section>
 
       {/* Onboarding: a real sequence */}
       <Section tone="white" aria-labelledby="onboarding-title">
-        <SectionHeading
-          id="onboarding-title"
-          title="From agreement to taking payments in 5 days"
-          intro="Underwriting takes about 2 business days, then your equipment ships with 2-day express shipping."
-        />
+        <SectionHeading id="onboarding-title" title="From agreement to taking payments in 5 days" />
         <OnboardingTimeline className="mt-14" />
       </Section>
     </>

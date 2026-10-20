@@ -1,13 +1,26 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
-import { useRef, useState, type KeyboardEvent } from 'react';
+import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import {
+  Banknote,
+  Calendar,
+  CircleHelp,
+  Mail,
+  MessageCircle,
+  Phone,
+  UserRound,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react';
 import FloatingLeadCapture from '@/components/FloatingLeadCapture';
 import { CalendlyButton } from '@/components/CalendlyWidget';
 import JsonLd from '@/components/JsonLd';
 import FaqList from '@/components/sections/FaqList';
 import { ArrowIcon, buttonClasses } from '@/components/ui/Button';
 import { PageHero, Section, SectionHeading } from '@/components/ui/Layout';
+import { IconTile } from '@/components/ui/Visuals';
 import { allFaqs, faqData } from '@/lib/faq';
 import { breadcrumbJsonLd, CONTACT_EMAIL, PHONE_DISPLAY, PHONE_HREF } from '@/lib/site';
 import { cn } from '@/lib/utils';
@@ -25,11 +38,28 @@ const faqJsonLd = {
 type Category = keyof typeof faqData;
 
 // `short` labels fit a 2x2 grid of tabs on phones.
-const categories: { id: Category; name: string; short: string }[] = [
-  { id: 'general', name: 'General support', short: 'General' },
-  { id: 'technical', name: 'Technical issues', short: 'Technical' },
-  { id: 'billing', name: 'Billing & payments', short: 'Billing' },
-  { id: 'account', name: 'Account management', short: 'Account' },
+const categories: { id: Category; name: string; short: string; icon: LucideIcon }[] = [
+  { id: 'general', name: 'General support', short: 'General', icon: CircleHelp },
+  { id: 'technical', name: 'Technical issues', short: 'Technical', icon: Wrench },
+  { id: 'billing', name: 'Billing & payments', short: 'Billing', icon: Banknote },
+  { id: 'account', name: 'Account management', short: 'Account', icon: UserRound },
+];
+
+const helpLinks: { title: string; description: string; link: string; href: string; icon: LucideIcon }[] = [
+  {
+    title: 'Already a Zummit merchant?',
+    description: 'See what your dedicated account manager can help with.',
+    link: 'Account management',
+    href: '/support/account',
+    icon: UserRound,
+  },
+  {
+    title: 'Still need help?',
+    description: 'Send us a message and we’ll get back to you within 2 hours.',
+    link: 'Contact us',
+    href: '/contact',
+    icon: Mail,
+  },
 ];
 
 type TawkWindow = Window & { Tawk_API?: { maximize?: () => void } };
@@ -76,10 +106,18 @@ export default function Support() {
     tabRefs.current[next]?.focus();
   };
 
-  const methods = [
+  const methods: {
+    title: string;
+    description: string;
+    icon: LucideIcon;
+    detail?: string;
+    action: ReactNode;
+    note?: ReactNode;
+  }[] = [
     {
       title: 'Live chat',
-      description: 'Chat with our support team. Available 24/7.',
+      description: 'Chat with our support team, 24/7.',
+      icon: MessageCircle,
       action: (
         <button type="button" onClick={openChat} className={buttonClasses('outline-light')}>
           Start a chat
@@ -95,6 +133,7 @@ export default function Support() {
     {
       title: 'Call us',
       description: 'Talk to our support team by phone.',
+      icon: Phone,
       action: (
         <a href={PHONE_HREF} className={buttonClasses('outline-light')}>
           Call {PHONE_DISPLAY}
@@ -103,7 +142,8 @@ export default function Support() {
     },
     {
       title: 'Email support',
-      description: 'Send us a detailed message. We reply within 2 hours.',
+      description: 'We reply within 2 hours.',
+      icon: Mail,
       detail: CONTACT_EMAIL,
       action: (
         <a href={`mailto:${CONTACT_EMAIL}`} className={buttonClasses('outline-light')}>
@@ -113,7 +153,8 @@ export default function Support() {
     },
     {
       title: 'Schedule a call',
-      description: 'Book a support call, Monday to Sunday, 9 AM to 9 PM EST.',
+      description: 'Monday to Sunday, 9\u00a0AM to 9\u00a0PM EST.',
+      icon: Calendar,
       action: <CalendlyButton text="Book a call" />,
     },
   ];
@@ -128,19 +169,41 @@ export default function Support() {
       {/* Contact options sit in the hero so a merchant with a problem can reach us without scrolling */}
       <PageHero
         title="24/7 customer support"
-        lead="Get the help you need, when you need it. Our support team is available around the clock for any question or issue."
+        lead="Get help when you need it. Our support team is available around the clock for any question or issue."
+        aside={
+          // Desktop only: on phones the contact options come first.
+          <figure className="ml-auto hidden max-w-md overflow-hidden rounded-2xl bg-white lg:block">
+            <div className="relative h-60">
+              <Image
+                src="/merchant2.PNG"
+                alt="Clover Flex handheld card terminal"
+                fill
+                priority
+                className="object-contain px-6 py-3"
+                sizes="448px"
+              />
+            </div>
+            <figcaption className="border-t border-line px-6 py-4 text-sm text-muted">
+              All equipment comes with training and ongoing support.
+            </figcaption>
+          </figure>
+        }
       >
-        <section aria-labelledby="contact-title" className="mt-14 border-t border-white/10">
+        {/* On phones the (hidden) aside still leaves the grid gap above, so the top margin starts small */}
+        <section aria-labelledby="contact-title" className="mt-2 border-t border-white/10 lg:mt-14">
           <h2 id="contact-title" className="sr-only">
             Ways to reach support
           </h2>
           <ul className="grid sm:grid-cols-2 lg:grid-cols-4">
             {methods.map((method, i) => (
               <li key={method.title} className={cn('flex flex-col border-white/10 py-8 lg:pb-0', methodBorders[i])}>
-                <h3 className="text-xl font-bold text-white">{method.title}</h3>
-                <p className="mt-2 max-w-[30ch] text-navy-200">{method.description}</p>
+                <div className="flex items-center gap-4 sm:block">
+                  <IconTile icon={method.icon} tone="dark" />
+                  <h3 className="text-xl font-bold text-white sm:mt-5">{method.title}</h3>
+                </div>
+                <p className="mt-1.5 max-w-[30ch] text-navy-200">{method.description}</p>
                 {method.detail && (
-                  <p className="mt-2 text-[0.9rem] font-semibold text-white [overflow-wrap:anywhere]">{method.detail}</p>
+                  <p className="mt-1.5 text-[0.9rem] font-semibold text-white [overflow-wrap:anywhere]">{method.detail}</p>
                 )}
                 <div className="mt-auto pt-6">{method.action}</div>
                 {method.note}
@@ -180,12 +243,17 @@ export default function Support() {
                     onClick={() => setActiveCategory(category.id)}
                     onKeyDown={(event) => onTabKeyDown(event, i)}
                     className={cn(
-                      'rounded-full border px-3 py-2.5 text-sm font-semibold transition-colors duration-150 sm:px-4 sm:py-2 sm:text-[0.95rem]',
+                      'inline-flex items-center justify-center gap-2 rounded-full border px-3 py-2.5 text-sm font-semibold transition-colors duration-150 sm:px-4 sm:py-2 sm:text-[0.95rem]',
                       selected
                         ? 'border-navy-900 bg-navy-900 text-white'
                         : 'border-line bg-white text-navy-900 hover:border-navy-900'
                     )}
                   >
+                    <category.icon
+                      aria-hidden="true"
+                      className={cn('h-4 w-4 shrink-0', selected ? 'text-gold-400' : 'text-navy-700')}
+                      strokeWidth={2}
+                    />
                     <span className="sm:hidden">{category.short}</span>
                     <span className="hidden sm:inline">{category.name}</span>
                   </button>
@@ -209,30 +277,24 @@ export default function Support() {
           </div>
 
           <div className="lg:col-start-1 lg:row-start-2 lg:mt-8">
-            <div className="space-y-6 lg:border-t lg:border-line lg:pt-8">
-              <div>
-                <p className="font-semibold text-navy-900">Already a Zummit merchant?</p>
-                <p className="mt-1 text-muted">See what your dedicated account manager can help with.</p>
-                <Link
-                  href="/support/account"
-                  className="mt-3 inline-flex items-center gap-2 font-semibold text-navy-700 hover:text-navy-900"
-                >
-                  Account management
-                  <ArrowIcon />
-                </Link>
-              </div>
-              <div>
-                <p className="font-semibold text-navy-900">Still need help?</p>
-                <p className="mt-1 text-muted">Send us a message and we&apos;ll get back to you within 2 hours.</p>
-                <Link
-                  href="/contact"
-                  className="mt-3 inline-flex items-center gap-2 font-semibold text-navy-700 hover:text-navy-900"
-                >
-                  Contact us
-                  <ArrowIcon />
-                </Link>
-              </div>
-            </div>
+            <ul className="space-y-7 lg:border-t lg:border-line lg:pt-8">
+              {helpLinks.map((item) => (
+                <li key={item.href} className="flex items-start gap-4">
+                  <IconTile icon={item.icon} size="sm" />
+                  <div>
+                    <p className="font-semibold text-navy-900">{item.title}</p>
+                    <p className="mt-1 text-muted">{item.description}</p>
+                    <Link
+                      href={item.href}
+                      className="mt-2 inline-flex items-center gap-2 font-semibold text-navy-700 hover:text-navy-900"
+                    >
+                      {item.link}
+                      <ArrowIcon />
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </Section>

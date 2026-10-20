@@ -40,7 +40,7 @@ export default function CustomerStories({ className }: { className?: string }) {
                 src={story.photo.src}
                 alt={story.photo.alt}
                 fill
-                className="object-cover object-[50%_18%]"
+                className="origin-top-left scale-[1.3] object-cover object-[0%_22%]"
                 sizes="(min-width: 1024px) 40vw, 100vw"
               />
             )}

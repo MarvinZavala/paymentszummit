@@ -1,10 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent, type InputHTMLAttributes, type ReactNode } from 'react';
+import Image from 'next/image';
+import { BadgeDollarSign, Banknote, Check, FileText, MapPin, Phone, Store, type LucideIcon } from 'lucide-react';
 import { supabase, type Lead } from '@/lib/supabase';
 import { CalendlyButton } from '@/components/CalendlyWidget';
 import { Container } from '@/components/ui/Layout';
-import { buttonClasses, CheckIcon } from '@/components/ui/Button';
+import { buttonClasses } from '@/components/ui/Button';
+import { IconTile } from '@/components/ui/Visuals';
 import { PHONE_DISPLAY, PHONE_HREF } from '@/lib/site';
 import { cn } from '@/lib/utils';
 
@@ -36,7 +39,19 @@ const volumeOptions = [
   { value: '$200k+', label: '$200k or more' },
 ];
 
-const questions = ['Where your business is based', 'Your monthly processing volume', 'Your business name', 'How to reach you'];
+// The four questions, in order. The same icon marks each one in the intro list and on its step.
+const questions: { label: string; icon: LucideIcon }[] = [
+  { label: 'Where your business is based', icon: MapPin },
+  { label: 'Your monthly processing volume', icon: Banknote },
+  { label: 'Your business name', icon: Store },
+  { label: 'How to reach you', icon: Phone },
+];
+
+const reassurance: { text: string; icon: LucideIcon }[] = [
+  { text: 'Free, no-obligation quote', icon: BadgeDollarSign },
+  { text: 'A detailed proposal within 24 hours', icon: FileText },
+  { text: 'A payment specialist calls to discuss your savings', icon: Phone },
+];
 
 // Step 0 is the intro, 1–4 are the questions, 5 is the confirmation.
 const QUESTION_COUNT = 4;
@@ -333,23 +348,25 @@ export default function GetQuote() {
             currentStep > 0 && 'hidden lg:block'
           )}
         >
-          Find out what you could save. Processing fees start from 0% for qualifying merchants, with competitive rates
-          tailored to your volume and industry.
+          Find out what you could save. Processing fees start from 0% for qualifying merchants.
         </p>
       </div>
 
       {/* The wizard */}
       <div className="rounded-2xl bg-white p-6 text-ink sm:p-10 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
         {isQuestion && (
-          <div className="mb-7">
-            <p id="quote-progress" className="text-sm font-semibold text-muted">
-              Step {currentStep} of {QUESTION_COUNT}
-            </p>
-            <div aria-hidden="true" className="mt-2 h-1.5 overflow-hidden rounded-full bg-paper">
-              <div
-                className="h-full rounded-full bg-navy-700 transition-[width] duration-300"
-                style={{ width: `${(currentStep / QUESTION_COUNT) * 100}%` }}
-              />
+          <div className="mb-7 flex items-center gap-4">
+            <IconTile icon={questions[currentStep - 1].icon} size="sm" />
+            <div className="flex-1">
+              <p id="quote-progress" className="text-sm font-semibold text-muted">
+                Step {currentStep} of {QUESTION_COUNT}
+              </p>
+              <div aria-hidden="true" className="mt-2 h-1.5 overflow-hidden rounded-full bg-paper">
+                <div
+                  className="h-full rounded-full bg-navy-700 transition-[width] duration-300"
+                  style={{ width: `${(currentStep / QUESTION_COUNT) * 100}%` }}
+                />
+              </div>
             </div>
           </div>
         )}
@@ -361,15 +378,10 @@ export default function GetQuote() {
             </h2>
             <p className="mt-2 text-muted">That&apos;s all we need to prepare your quote.</p>
             <ol className="mt-6 divide-y divide-line border-y border-line">
-              {questions.map((question, i) => (
-                <li key={question} className="flex items-center gap-4 py-3.5 text-[1.05rem]">
-                  <span
-                    aria-hidden="true"
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-paper text-sm font-bold text-navy-900"
-                  >
-                    {i + 1}
-                  </span>
-                  {question}
+              {questions.map((question) => (
+                <li key={question.label} className="flex items-center gap-4 py-3 text-[1.05rem]">
+                  <IconTile icon={question.icon} size="sm" />
+                  {question.label}
                 </li>
               ))}
             </ol>
@@ -497,10 +509,12 @@ export default function GetQuote() {
 
         {currentStep === SUCCESS_STEP && (
           <div>
-            <span className="grid h-12 w-12 place-items-center rounded-full bg-gold-400 text-navy-950">
-              <CheckIcon className="h-6 w-6" />
+            <span aria-hidden="true" className="grid w-fit rounded-full border border-gold-500/60 p-2">
+              <span className="grid h-16 w-16 place-items-center rounded-full bg-gold-400 text-navy-950">
+                <Check className="h-8 w-8" strokeWidth={2.5} />
+              </span>
             </span>
-            <h2 ref={headingRef} tabIndex={-1} className={cn(headingClass, 'mt-6')}>
+            <h2 ref={headingRef} tabIndex={-1} className={cn(headingClass, 'mt-7')}>
               Thank you{formData.firstName.trim() ? `, ${formData.firstName.trim()}` : ''}.
             </h2>
             <p className="mt-3 text-lg text-muted">
@@ -522,21 +536,32 @@ export default function GetQuote() {
       {/* Reassurance: below the form on phones, under the promise on desktop */}
       {currentStep !== SUCCESS_STEP && (
         <div className="lg:col-start-1 lg:row-start-2">
-          <ul className="space-y-3 text-navy-200">
-            {['Free, no-obligation quote', 'A detailed proposal within 24 hours', 'A payment specialist calls to discuss your savings'].map(
-              (item) => (
-                <li key={item} className="flex items-start gap-3">
-                  <CheckIcon className="mt-0.5 text-gold-400" />
-                  {item}
+          <div className="grid gap-8 sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] sm:items-center sm:gap-10">
+            <div className="overflow-hidden rounded-2xl bg-white p-4">
+              <Image
+                src="/merchant2.PNG"
+                alt="Clover Flex handheld card terminal showing a $15.00 sale"
+                width={887}
+                height={661}
+                className="h-auto w-full"
+                sizes="(min-width: 640px) 240px, 100vw"
+              />
+            </div>
+            <ul className="space-y-4 text-navy-200">
+              {reassurance.map((item) => (
+                <li key={item.text} className="flex items-center gap-4">
+                  <IconTile icon={item.icon} tone="dark" size="sm" />
+                  {item.text}
                 </li>
-              )
-            )}
-          </ul>
-          <div className="mt-10 max-w-md border-t border-white/10 pt-8">
+              ))}
+            </ul>
+          </div>
+          <div className="mt-10 border-t border-white/10 pt-8">
             <p className="font-semibold text-white">Prefer to talk it through first?</p>
-            <p className="mt-1 text-navy-200">Book a free 30-minute call with a payment processing expert.</p>
-            <CalendlyButton text="Schedule a free call" variant="outline-light" className="mt-5" />
-            <p className="mt-4 text-sm text-navy-300">Calls available Monday to Sunday, 9 AM to 9 PM EST.</p>
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+              <CalendlyButton text="Schedule a free call" variant="outline-light" />
+              <p className="text-sm text-navy-300">Free 30-minute call, Monday to Sunday, 9 AM to 9 PM EST.</p>
+            </div>
           </div>
         </div>
       )}
